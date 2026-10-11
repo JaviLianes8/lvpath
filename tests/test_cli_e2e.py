@@ -43,7 +43,7 @@ def _run(exe: Path, *args: str) -> subprocess.CompletedProcess[str]:
 def test_installed_script_reports_its_version(lvpath_exe: Path) -> None:
     result = _run(lvpath_exe, "--version")
     assert result.returncode == 0
-    assert result.stdout.strip() == "lvpath 0.2.0"
+    assert result.stdout.strip() == "lvpath 0.3.0"
 
 
 def test_installed_script_decodes_the_golden_vector(lvpath_exe: Path) -> None:
@@ -87,3 +87,56 @@ def test_installed_script_refuses_unc_paths(lvpath_exe: Path) -> None:
     result = _run(lvpath_exe, "encode", "--platform", "windows", r"\\server\share\file")
     assert result.returncode == 1
     assert "UNC" in result.stderr
+
+
+# Real path values from files shipped with LabVIEW 2026 (see fixtures/labview2026_paths.json).
+REAL_PORTABLE = "/C/Program Files (x86)/Arduino"
+REAL_WINDOWS = "C:\\Program Files (x86)\\Arduino"
+
+
+def test_installed_script_converts_a_real_labview_path_to_native(lvpath_exe: Path) -> None:
+    result = _run(lvpath_exe, "to-native", "--platform", "windows", REAL_PORTABLE)
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == REAL_WINDOWS
+
+
+def test_installed_script_converts_a_native_path_to_labview(lvpath_exe: Path) -> None:
+    result = _run(lvpath_exe, "to-labview", "--platform", "windows", REAL_WINDOWS)
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == REAL_PORTABLE
+
+
+def test_installed_script_round_trips_unc_and_relative(lvpath_exe: Path) -> None:
+    for portable in ("//server/share/dir", "../builds/NI_AB_PROJECTNAME/Main Application"):
+        native = _run(lvpath_exe, "to-native", "--platform", "windows", portable)
+        assert native.returncode == 0, native.stderr
+        back = _run(lvpath_exe, "to-labview", "--platform", "windows", native.stdout.strip())
+        assert back.returncode == 0, back.stderr
+        assert back.stdout.strip() == portable
+
+
+def test_installed_script_reads_posix_values_unchanged(lvpath_exe: Path) -> None:
+    result = _run(lvpath_exe, "to-native", "--platform", "posix", "/home/lvuser/natinst/bin")
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == "/home/lvuser/natinst/bin"
+
+
+def test_installed_script_refuses_not_a_path(lvpath_exe: Path) -> None:
+    result = _run(lvpath_exe, "to-native", "--platform", "windows", "")
+    assert result.returncode == 1
+    assert result.stdout == ""
+    assert "not-a-path" in result.stderr
+
+
+def test_installed_script_refuses_posix_absolute_on_windows(lvpath_exe: Path) -> None:
+    result = _run(lvpath_exe, "to-native", "--platform", "windows", "/home/lvuser")
+    assert result.returncode == 1
+    assert result.stdout == ""
+    assert "no Windows equivalent" in result.stderr
+
+
+def test_installed_script_help_lists_runnable_examples(lvpath_exe: Path) -> None:
+    result = _run(lvpath_exe, "--help")
+    assert result.returncode == 0
+    for command in ("to-native", "to-labview", "decode", "encode"):
+        assert f"lvpath {command} --platform" in result.stdout
