@@ -4,14 +4,14 @@ build-backend = "hatchling.build"
 
 [project]
 name = "lvpath"
-version = "0.2.0"
-description = "Convert between LabVIEW path strings and native OS paths, with absolute, relative and not-a-path detection."
+version = "0.3.0"
+description = "Convert LabVIEW path strings, the portable /C/DIR form of config and project files, and the flattened PTH0 form to and from native paths."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [{ name = "Javier Lianes", email = "javier@lianes8studio.com" }]
-keywords = []
+keywords = ["labview", "path", "ni", "pathlib", "ini", "lvproj", "flatten"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
