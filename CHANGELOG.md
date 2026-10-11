@@ -6,6 +6,23 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.3.0]
+
+- Added the portable path form LabVIEW writes into configuration and project
+  files. `from_portable_path` reads `/C/DIR1/DIR2` as `C:\DIR1\DIR2`,
+  `//server/share/dir` as a UNC path and `../a/b` as a relative path;
+  `to_portable_path` writes them back exactly. The empty value is `<Not A Path>`.
+- `PortablePathError` reports a value with no faithful counterpart instead of
+  rewriting it into another path: a POSIX absolute path read as Windows, a
+  drive-relative `C:file`, a rooted Windows path without a drive, a UNC path
+  without a share and a `\\?\` device path.
+- The `lvpath` command line gains `to-native` and `to-labview`, and its help lists
+  runnable examples for every subcommand.
+- The test suite carries a verbatim excerpt of path values from files shipped with
+  LabVIEW 2026 and checks every value in both directions and through a round trip.
+- The README no longer implies that `to_os_path` translates `/C/foo`; it documents
+  the portable form, its rules and its one ambiguity.
+
 ## [0.2.0]
 
 - Added the binary flattened path form (`Flatten To String` `PTH0`). `FlatPath` is
