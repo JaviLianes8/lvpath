@@ -6,6 +6,21 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.0]
+
+- Added the binary flattened path form (`Flatten To String` `PTH0`). `FlatPath` is
+  a typed, frozen result with `to_bytes` and `from_bytes`; `parse_flat_path` and
+  `build_flat_path` are the codec entry points. The NI `C:\File` example round-trips
+  byte for byte in both directions.
+- `to_flat_path` and `from_flat_path` bridge the flattened form to and from
+  `pathlib.PurePath` on a chosen platform flavor.
+- `FlatPathType` exposes the two documented path type codes (absolute `0`, relative
+  `1`). UNC and not-a-path codes are undocumented, so they are not guessed: the
+  codec still round-trips their raw bytes, while the PurePath bridge refuses an
+  un-interpretable type code with `FlatPathError`.
+- Added an `lvpath` command line with `decode` and `encode` subcommands and
+  `--version`.
+
 ## [0.1.0]
 
 - First release.
