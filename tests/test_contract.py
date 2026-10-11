@@ -5,10 +5,18 @@ import lvpath
 # The public API. Add every exported name here as the library grows; this list is the
 # contract and the test below fails if the module and this list disagree.
 PUBLIC_API: list[str] = [
+    "SIGNATURE",
+    "FlatPath",
+    "FlatPathError",
+    "FlatPathType",
     "NotAPathError",
     "PathKind",
     "Platform",
+    "build_flat_path",
+    "from_flat_path",
+    "parse_flat_path",
     "path_kind",
+    "to_flat_path",
     "to_lv_path",
     "to_os_path",
 ]
