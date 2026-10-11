@@ -74,14 +74,18 @@ standard textual form of a host platform. This library models that textual form:
 ## Why
 
 LabVIEW serializes a path in the standard textual form of its host platform, and
-that form differs from `os.path`: platform-dependent separators, drive and UNC
-anchors, and the empty string standing for `<Not A Path>`. LabVIEW does not
-translate separators when a path crosses platforms (for example a Windows string
-read on macOS keeps its backslashes), so round-tripping LabVIEW path data in
-Python needs explicit, platform-aware handling. No PyPI package does this: the
-existing options are LabVIEW's own built-in functions and the generic `pathlib`,
-which has no notion of a foreign-platform LabVIEW string or of not-a-path. This
-library fills that gap with a small, typed, zero-dependency surface.
+LabVIEW does not translate separators when a path crosses platforms (for example a
+Windows string read on macOS keeps its backslashes), so round-tripping LabVIEW path
+data in Python needs explicit, platform-aware handling.
+
+The standard library already does most of this. `pathlib`'s `PureWindowsPath` and
+`PurePosixPath` are built to manipulate foreign-platform paths with no I/O, so they
+cover the bulk of the separator and anchor handling on their own, and this library is
+a thin wrapper over them rather than a reimplementation. What they do not know is the
+genuinely LabVIEW-specific residue: the leading-slash drive form (`/C/foo` to
+`C:\foo`), the empty string standing for `<Not A Path>`, and LabVIEW's exact
+serialization rules. No PyPI package targets those conventions. `lvpath` adds exactly
+that layer on top of `pathlib`, with a small, typed, zero-dependency surface.
 
 ## License
 
