@@ -26,6 +26,7 @@ from ._kinds import NotAPathError
 from ._platform import Platform, flavor, resolve
 
 _PORTABLE_DRIVE = re.compile(r"^/([A-Za-z])(?:/(.*))?$", re.DOTALL)
+_MALFORMED_DRIVE = re.compile(r"^/[A-Za-z][:\\]")
 _DEVICE_PREFIXES = ("\\\\?\\", "\\\\.\\")
 
 
@@ -56,6 +57,8 @@ def from_portable_path(text: str, *, platform: Platform | str | None = None) -> 
     if match:
         drive, rest = match.groups()
         return PureWindowsPath(f"{drive}:\\{rest or ''}")
+    if _MALFORMED_DRIVE.match(text):
+        raise PortablePathError(f"{text!r} has a malformed drive component, expected /C/...")
     if text.startswith("/") and not text.startswith(("//", "/\\")):
         raise PortablePathError(f"{text!r} is a POSIX absolute path with no Windows equivalent")
     pure = PureWindowsPath(text)
@@ -70,7 +73,8 @@ def to_portable_path(
 
     ``C:\\DIR1\\DIR2`` becomes ``/C/DIR1/DIR2``, ``\\\\server\\share\\dir``
     becomes ``//server/share/dir`` and a relative path joins its parts with
-    forward slashes. ``None`` or ``""`` becomes the ``<Not A Path>`` value ``""``.
+    forward slashes. ``None`` or ``""`` becomes the ``<Not A Path>`` value ``""``;
+    an empty ``PurePath`` is pathlib's current directory and becomes ``"."``.
 
     A ``str`` is parsed with the flavor of ``platform`` (default: the running
     operating system). A ``PurePath`` keeps its own flavor; when ``platform``

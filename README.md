@@ -83,8 +83,10 @@ except PortablePathError:
     ...
 ```
 
-The rules, checked against path values in files shipped with LabVIEW 2026 (the
-test suite carries a verbatim excerpt in `tests/fixtures/labview2026_paths.json`):
+The rules below are checked against path values in files shipped with LabVIEW 2026
+(the test suite carries a verbatim excerpt in `tests/fixtures/labview2026_paths.json`).
+No shipped file holds a bare drive or a UNC value, so the `/D` and `//server/share/dir`
+rows are covered by synthetic tests that follow the same convention:
 
 | Stored value                     | Windows                        | POSIX                            |
 | -------------------------------- | ------------------------------ | -------------------------------- |
@@ -96,7 +98,8 @@ test suite carries a verbatim excerpt in `tests/fixtures/labview2026_paths.json`
 | `/home/lvuser/natinst/bin`       | `PortablePathError`            | `/home/lvuser/natinst/bin`       |
 | empty                            | `NotAPathError`                | `NotAPathError`                  |
 
-- The drive letter keeps its case, so a value round-trips exactly.
+- The drive letter keeps its case, so a value in normal form (no trailing slash,
+  repeated separator or `.` component, as LabVIEW writes it) round-trips exactly.
 - A value already in native Windows form (`C:\NI Installers`), which some NI files
   store, is accepted as is when reading on Windows.
 - On POSIX the stored form is already native and is parsed unchanged. A one-letter
@@ -109,7 +112,13 @@ test suite carries a verbatim excerpt in `tests/fixtures/labview2026_paths.json`
 - A `str` is parsed with the flavor of `platform`; a `PurePath` keeps its own
   flavor, and only a relative one may be carried to the other flavor.
 - Text is normalised by `pathlib`: repeated separators collapse, a trailing slash and
-  `.` components are dropped.
+  `.` components are dropped, so `/C/x/` writes back as `/C/x`. A backslash inside a
+  value read on Windows is a separator (`/C/x\y` reads as `C:\x\y`).
+- The sibling `lvconfig` library gives the same results on drive, UNC and relative
+  values in normal form. lvpath refuses the values it cannot convert faithfully
+  (`C:file`, `D:`, `\dir`, `//server`, a POSIX absolute path on Windows) where
+  lvconfig rewrites them, and normalises text through `pathlib` where lvconfig only
+  swaps separators.
 
 ## Flattened form
 
@@ -169,8 +178,10 @@ lvpath --version
 
 `lvpath decode` accepts hex with or without spaces. `lvpath to-labview ""` prints an
 empty line, the `<Not A Path>` value, while `lvpath to-native ""` is an error. Errors
-are written to standard error and the command exits with status 1. Run
-`lvpath --help` for the full usage.
+are written to standard error and the command exits with status 1. Output is UTF-8.
+A value that starts with `-` goes after `--`. Under Git Bash on Windows, set
+`MSYS_NO_PATHCONV=1` so the shell passes POSIX-looking arguments such as `/C/x`
+unchanged. Run `lvpath --help` for the full usage.
 
 ## Covered conventions
 

@@ -135,7 +135,7 @@ def test_unknown_platform_is_an_error() -> None:
 
 
 # The same vectors the sibling lvconfig library pins for its stored path form, so
-# both libraries agree on every value either one supports.
+# both libraries agree on drive, UNC and relative values in normal form.
 @pytest.mark.parametrize(
     ("native", "portable"),
     [
@@ -178,3 +178,17 @@ def test_incomplete_unc_values_name_the_input(text: str) -> None:
     with pytest.raises(PortablePathError, match="UNC") as raised:
         to_portable_path(text, platform="windows")
     assert repr(text) in str(raised.value)
+
+
+@pytest.mark.parametrize("text", ["/C:/x", "/c\\x"])
+def test_a_malformed_drive_component_is_named(text: str) -> None:
+    with pytest.raises(PortablePathError, match="malformed drive"):
+        from_portable_path(text, platform="windows")
+
+
+@pytest.mark.parametrize(
+    ("native", "portable"),
+    [("C:\\x\\", "/C/x"), ("a/b/", "a/b"), ("C:\\a\\.\\b", "/C/a/b")],
+)
+def test_pathlib_normal_form_differs_from_lvconfig_by_design(native: str, portable: str) -> None:
+    assert to_portable_path(native, platform="windows") == portable

@@ -10,6 +10,7 @@ process exits with status ``1``.
 from __future__ import annotations
 
 import argparse
+import io
 import sys
 from collections.abc import Sequence
 
@@ -99,6 +100,11 @@ def _add_platform(parser: argparse.ArgumentParser) -> None:
 def main(argv: Sequence[str] | None = None) -> int:
     """Run the command line interface. Returns the process exit status."""
     args = _build_parser().parse_args(argv)
+    # Paths may hold any Unicode character; a pipe on Windows defaults to a
+    # legacy code page, so write UTF-8 to standard output and standard error.
+    for stream in (sys.stdout, sys.stderr):
+        if isinstance(stream, io.TextIOWrapper):
+            stream.reconfigure(encoding="utf-8")
     try:
         print(_run(args.command, args, args.platform))
     except ValueError as error:

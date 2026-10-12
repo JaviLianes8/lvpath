@@ -11,7 +11,7 @@ All notable changes to this project are documented here. The format follows
 - Added the portable path form LabVIEW writes into configuration and project
   files. `from_portable_path` reads `/C/DIR1/DIR2` as `C:\DIR1\DIR2`,
   `//server/share/dir` as a UNC path and `../a/b` as a relative path;
-  `to_portable_path` writes them back exactly. The empty value is `<Not A Path>`.
+  `to_portable_path` writes them back, keeping the drive letter case. The empty value is `<Not A Path>`.
 - `PortablePathError` reports a value with no faithful counterpart instead of
   rewriting it into another path: a POSIX absolute path read as Windows, a
   drive-relative `C:file`, a rooted Windows path without a drive, a UNC path

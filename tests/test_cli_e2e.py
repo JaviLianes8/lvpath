@@ -8,6 +8,7 @@ prove the NI golden vector round-trips byte for byte through the shipped CLI.
 
 from __future__ import annotations
 
+import shlex
 import subprocess
 import sys
 import venv
@@ -37,7 +38,7 @@ def lvpath_exe(tmp_path_factory: pytest.TempPathFactory) -> Path:
 
 
 def _run(exe: Path, *args: str) -> subprocess.CompletedProcess[str]:
-    return subprocess.run([str(exe), *args], capture_output=True, text=True, timeout=60)
+    return subprocess.run([str(exe), *args], capture_output=True, encoding="utf-8", timeout=60)
 
 
 def test_installed_script_reports_its_version(lvpath_exe: Path) -> None:
@@ -140,3 +141,44 @@ def test_installed_script_help_lists_runnable_examples(lvpath_exe: Path) -> None
     assert result.returncode == 0
     for command in ("to-native", "to-labview", "decode", "encode"):
         assert f"lvpath {command} --platform" in result.stdout
+    lines = [line.strip() for line in result.stdout.splitlines()]
+    for index, line in enumerate(lines):
+        if not line.startswith("lvpath "):
+            continue
+        run = _run(lvpath_exe, *shlex.split(line)[1:])
+        assert (run.returncode, run.stderr) == (0, ""), line
+        following = lines[index + 1] if index + 1 < len(lines) else ""
+        if following.startswith("# prints "):
+            assert run.stdout == following.removeprefix("# prints ") + "\n", line
+
+
+@pytest.mark.parametrize(
+    ("portable", "native"),
+    [("/c/ni-rt/startup", "c:\\ni-rt\\startup"), ("/D", "D:\\"), (" a /b ", " a \\b ")],
+)
+def test_installed_script_prints_drives_and_spaces_exactly(
+    lvpath_exe: Path, portable: str, native: str
+) -> None:
+    result = _run(lvpath_exe, "to-native", "--platform", "windows", portable)
+    assert (result.returncode, result.stdout, result.stderr) == (0, native + "\n", "")
+    back = _run(lvpath_exe, "to-labview", "--platform", "windows", native)
+    assert (back.returncode, back.stdout, back.stderr) == (0, portable + "\n", "")
+
+
+def test_installed_script_writes_not_a_path_as_an_empty_line(lvpath_exe: Path) -> None:
+    result = _run(lvpath_exe, "to-labview", "--platform", "windows", "")
+    assert (result.returncode, result.stdout, result.stderr) == (0, "\n", "")
+
+
+def test_installed_script_to_labview_refuses_a_drive_relative_path(lvpath_exe: Path) -> None:
+    result = _run(lvpath_exe, "to-labview", "--platform", "windows", "C:file")
+    assert (result.returncode, result.stdout) == (1, "")
+    assert "drive-relative" in result.stderr
+
+
+def test_installed_script_prints_non_ascii_paths_through_a_pipe(lvpath_exe: Path) -> None:
+    name = "Data \u0101\u4e2d"
+    result = _run(lvpath_exe, "to-native", "--platform", "windows", f"/C/{name}")
+    assert (result.returncode, result.stdout, result.stderr) == (0, f"C:\\{name}\n", "")
+    back = _run(lvpath_exe, "to-labview", "--platform", "windows", f"C:\\{name}")
+    assert (back.returncode, back.stdout, back.stderr) == (0, f"/C/{name}\n", "")

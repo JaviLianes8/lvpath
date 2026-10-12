@@ -46,6 +46,20 @@ def test_to_labview_errors_go_to_stderr(capsys: pytest.CaptureFixture[str]) -> N
     assert "rooted without a drive" in err
 
 
+def test_non_ascii_paths_print_in_both_directions(capsys: pytest.CaptureFixture[str]) -> None:
+    name = "Data \u0101\u4e2d"
+    status, out, err = _out(capsys, "to-native", "--platform", "windows", f"/C/{name}")
+    assert (status, out, err) == (0, f"C:\\{name}\n", "")
+    status, out, err = _out(capsys, "to-labview", "--platform", "windows", f"C:\\{name}")
+    assert (status, out, err) == (0, f"/C/{name}\n", "")
+
+
+def test_a_malformed_drive_is_reported(capsys: pytest.CaptureFixture[str]) -> None:
+    status, out, err = _out(capsys, "to-native", "--platform", "windows", "/C:/x")
+    assert (status, out) == (1, "")
+    assert "malformed drive" in err
+
+
 def test_decode_and_encode_still_work(capsys: pytest.CaptureFixture[str]) -> None:
     assert _out(capsys, "decode", "--platform", "windows", GOLDEN_HEX) == (0, "C:\\file\n", "")
     assert _out(capsys, "encode", "--platform", "windows", "C:\\file") == (0, GOLDEN_HEX + "\n", "")

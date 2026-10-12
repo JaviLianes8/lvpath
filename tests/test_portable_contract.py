@@ -114,6 +114,26 @@ def test_native_form_value_converts_and_round_trips(row: dict[str, Any]) -> None
     assert str(from_portable_path(row["windows"], platform="windows")) == row["windows"]
 
 
+# No shipped LabVIEW 2026 file holds a bare drive or a UNC value, so these parts of
+# the promise are pinned by synthetic rows that follow the same convention.
+SYNTHETIC = [
+    ("/D", "D:\\"),
+    ("/e/data", "e:\\data"),
+    ("//server/share", "\\\\server\\share\\"),
+    ("//server/share/dir/f.ini", "\\\\server\\share\\dir\\f.ini"),
+    ("//srv/c$/x", "\\\\srv\\c$\\x"),
+]
+
+
+@pytest.mark.parametrize(("portable", "windows"), SYNTHETIC)
+def test_bare_drive_and_unc_values_convert_and_round_trip(portable: str, windows: str) -> None:
+    native = from_portable_path(portable, platform="windows")
+    assert str(native) == windows
+    assert to_portable_path(native) == portable
+    assert to_portable_path(windows, platform="windows") == portable
+    assert str(from_portable_path(portable, platform="posix")) == portable
+
+
 def test_ni_forum_example_converts_both_ways() -> None:
     # NI forum "Config files and the PATH": C:\DIR1\DIR2 is saved as /C/DIR1/DIR2.
     assert str(from_portable_path("/C/DIR1/DIR2", platform="windows")) == "C:\\DIR1\\DIR2"
