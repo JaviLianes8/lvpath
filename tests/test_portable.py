@@ -150,3 +150,31 @@ def test_unknown_platform_is_an_error() -> None:
 def test_agrees_with_the_lvconfig_stored_path_vectors(native: str, portable: str) -> None:
     assert to_portable_path(native, platform="windows") == portable
     assert str(from_portable_path(portable, platform="windows")) == native
+
+
+def test_rooted_driveless_windows_path_does_not_cross_to_posix() -> None:
+    with pytest.raises(PortablePathError, match="cannot carry"):
+        to_portable_path(PureWindowsPath("/x"), platform="posix")
+
+
+def test_posix_name_with_a_backslash_does_not_cross_to_windows() -> None:
+    with pytest.raises(PortablePathError, match="backslash"):
+        to_portable_path(PurePosixPath("a\\b"), platform="windows")
+
+
+def test_a_trailing_newline_is_never_dropped() -> None:
+    with pytest.raises(PortablePathError):
+        from_portable_path("/C\n", platform="windows")
+    assert from_portable_path("/C/a\n", platform="windows").name == "a\n"
+
+
+def test_mixed_separators_in_a_unc_value_are_accepted() -> None:
+    result = from_portable_path("//server\\share\\dir", platform="windows")
+    assert str(result) == "\\\\server\\share\\dir"
+
+
+@pytest.mark.parametrize("text", ["\\\\server", "//server//share", "/\\x"])
+def test_incomplete_unc_values_name_the_input(text: str) -> None:
+    with pytest.raises(PortablePathError, match="UNC") as raised:
+        to_portable_path(text, platform="windows")
+    assert repr(text) in str(raised.value)

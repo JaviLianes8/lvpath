@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import shlex
+
 import pytest
 
-from lvpath._cli import main
+from lvpath._cli import _EXAMPLES, main
 
 GOLDEN_HEX = "505448300000000b0000000201430466696c65"
 
@@ -60,3 +62,17 @@ def test_a_missing_command_is_a_usage_error(capsys: pytest.CaptureFixture[str]) 
         main([])
     assert raised.value.code == 2
     assert "usage: lvpath" in capsys.readouterr().err
+
+
+def test_every_help_example_runs_and_prints_what_it_states(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    lines = [line.strip() for line in _EXAMPLES.splitlines()]
+    commands = [index for index, line in enumerate(lines) if line.startswith("lvpath ")]
+    assert len(commands) >= 6
+    for index in commands:
+        status, out, err = _out(capsys, *shlex.split(lines[index])[1:])
+        assert (status, err) == (0, ""), lines[index]
+        following = lines[index + 1] if index + 1 < len(lines) else ""
+        if following.startswith("# prints "):
+            assert out == following.removeprefix("# prints ") + "\n", lines[index]

@@ -36,8 +36,9 @@ follows the same convention and matches the sibling `lvconfig` library.
    Native Windows text is accepted as is.
 
 2. **Write the portable form.** `to_portable_path(path, platform=...)` is the
-   exact inverse, so every stored value round-trips byte for byte, including the
-   case of the drive letter.
+   exact inverse, so every value LabVIEW writes (already free of trailing and
+   repeated separators) round-trips byte for byte, including the case of the
+   drive letter.
 
 3. **Not-A-Path.** The empty value raises `NotAPathError` when read, and `None`
    or `""` writes back as `""`, matching the existing textual surface.
@@ -50,10 +51,16 @@ follows the same convention and matches the sibling `lvconfig` library.
 5. **Consistency with lvconfig.** Same outputs as `lvconfig`'s
    `to_labview_path` / `from_labview_path` on drive, UNC and relative values,
    pinned by a test over lvconfig's own vectors. lvpath stays zero-dependency and
-   does not import it. Two deliberate differences: lvpath refuses the lossy cases
-   above where lvconfig rewrites them (`C:file` to `/C/file`, `/home/x` to
-   `\home\x` on Windows), and a bare share `//srv/sh` renders with `pathlib`'s
-   trailing backslash (`\\srv\sh\`), the same path.
+   does not import it. Deliberate differences:
+   - lvpath refuses the lossy cases above where lvconfig rewrites them (`C:file`
+     to `/C/file`, `/home/x` to `\home\x` on Windows), and refuses to read the
+     empty value, which lvconfig returns as `""`.
+   - lvpath goes through `pathlib`, which normalises text: a trailing separator,
+     repeated separators and `.` components are dropped (`/C/a/` reads as `C:\a`,
+     `./a` as `a`), and a bare share `//srv/sh` renders as `\\srv\sh\`. lvconfig
+     only swaps separators and keeps such text as written.
+   - lvpath honours the platform: writing a POSIX path keeps it as is, while
+     lvconfig assumes Windows input and swaps every backslash.
 
 6. **CLI.** `lvpath to-native` and `lvpath to-labview` beside `decode` and
    `encode`, with runnable examples in `--help`; errors go to stderr with exit 1.
