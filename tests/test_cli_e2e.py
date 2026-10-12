@@ -44,7 +44,7 @@ def _run(exe: Path, *args: str) -> subprocess.CompletedProcess[str]:
 def test_installed_script_reports_its_version(lvpath_exe: Path) -> None:
     result = _run(lvpath_exe, "--version")
     assert result.returncode == 0
-    assert result.stdout.strip() == "lvpath 0.3.0"
+    assert result.stdout.strip() == "lvpath 0.3.1"
 
 
 def test_installed_script_decodes_the_golden_vector(lvpath_exe: Path) -> None:
