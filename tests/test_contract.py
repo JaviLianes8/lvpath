@@ -12,13 +12,16 @@ PUBLIC_API: list[str] = [
     "NotAPathError",
     "PathKind",
     "Platform",
+    "PortablePathError",
     "build_flat_path",
     "from_flat_path",
+    "from_portable_path",
     "parse_flat_path",
     "path_kind",
     "to_flat_path",
     "to_lv_path",
     "to_os_path",
+    "to_portable_path",
 ]
 
 

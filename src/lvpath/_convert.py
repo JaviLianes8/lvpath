@@ -24,7 +24,9 @@ def to_os_path(lv_path: str, *, platform: Platform | str | None = None) -> PureP
 
     Raises :class:`NotAPathError` for the empty not-a-path value, which has no
     operating-system path. Forward slashes are accepted when parsing a Windows
-    path, matching LabVIEW's lenient reader.
+    path, matching LabVIEW's lenient reader. This reads the host's native text
+    form; for the portable form LabVIEW writes into configuration and project
+    files (``/C/DIR1/DIR2``) use :func:`lvpath.from_portable_path`.
     """
     if lv_path == "":
         raise NotAPathError("LabVIEW not-a-path has no OS path")

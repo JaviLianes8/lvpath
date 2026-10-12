@@ -1,29 +1,41 @@
-"""Command-line interface for the LabVIEW flattened path form.
+"""Command-line interface for LabVIEW path strings and the flattened path form.
 
-``lvpath decode`` turns the hex of a flattened ``PTH0`` byte string into an OS
-path; ``lvpath encode`` turns an OS path into that hex. Errors are written to
-standard error and the process exits with status ``1``.
+``lvpath to-native`` turns LabVIEW's portable path string (``/C/DIR1/DIR2``) into
+a native path; ``lvpath to-labview`` does the reverse. ``lvpath decode`` turns the
+hex of a flattened ``PTH0`` byte string into a native path; ``lvpath encode``
+turns a native path into that hex. Errors are written to standard error and the
+process exits with status ``1``.
 """
 
 from __future__ import annotations
 
 import argparse
+import io
 import sys
 from collections.abc import Sequence
 
 from . import __version__
 from ._flatbridge import from_flat_path, to_flat_path
-from ._flatten import FlatPathError
+from ._portable import from_portable_path, to_portable_path
 
 _EXAMPLES = """\
 examples:
+  # LabVIEW's portable path string, as written in .ini and .lvproj files, to Windows.
+  lvpath to-native --platform windows "/C/Program Files (x86)/Arduino"
+  # prints C:\\Program Files (x86)\\Arduino
+
+  # A UNC share and a relative path.
+  lvpath to-native --platform windows //server/share/dir
+  lvpath to-native --platform windows "../builds/Main Application"
+
+  # A native Windows path to the portable string LabVIEW writes.
+  lvpath to-labview --platform windows "C:\\DIR1\\DIR2"
+  # prints /C/DIR1/DIR2
+
   # Decode the NI C:\\File flattened example into a path.
   lvpath decode --platform windows 505448300000000b0000000201430466696c65
 
-  # Encode a Windows path into its flattened hex form.
-  lvpath encode --platform windows "C:\\file"
-
-  # Encode a POSIX path (spaces in the hex are accepted on decode).
+  # Encode a path into its flattened hex form (spaces in the hex are accepted on decode).
   lvpath encode --platform posix /usr/local/bin
 """
 
@@ -31,28 +43,48 @@ examples:
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="lvpath",
-        description="Decode and encode the LabVIEW PTH0 flattened path form.",
+        description=(
+            "Convert LabVIEW's portable path strings to and from native paths, and decode "
+            "or encode the LabVIEW PTH0 flattened path form."
+        ),
         epilog=_EXAMPLES,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("--version", action="version", version=f"lvpath {__version__}")
     subparsers = parser.add_subparsers(dest="command", required=True)
-
-    decode = subparsers.add_parser(
-        "decode",
-        help="hex of flattened PTH0 bytes to an OS path",
-        description="Decode the hex of a flattened PTH0 byte string into an OS path.",
-    )
-    decode.add_argument("hex", help="flattened path bytes as hex (spaces allowed)")
-    _add_platform(decode)
-
-    encode = subparsers.add_parser(
-        "encode",
-        help="an OS path to flattened PTH0 hex",
-        description="Encode an OS path into the hex of its flattened PTH0 byte string.",
-    )
-    encode.add_argument("path", help="the OS path to flatten")
-    _add_platform(encode)
+    commands = [
+        (
+            "to-native",
+            "text",
+            "a LabVIEW portable path string to a native path",
+            "Convert a LabVIEW portable path string (/C/DIR1/DIR2, //server/share, a/b) "
+            "into a native path. An empty string is <Not A Path> and is an error.",
+        ),
+        (
+            "to-labview",
+            "path",
+            "a native path to a LabVIEW portable path string",
+            "Convert a native path into the portable path string LabVIEW writes into "
+            "configuration and project files. An empty path prints an empty line, "
+            "LabVIEW's <Not A Path>.",
+        ),
+        (
+            "decode",
+            "hex",
+            "hex of flattened PTH0 bytes to a native path",
+            "Decode the hex of a flattened PTH0 byte string into a native path.",
+        ),
+        (
+            "encode",
+            "path",
+            "a native path to flattened PTH0 hex",
+            "Encode a native path into the hex of its flattened PTH0 byte string.",
+        ),
+    ]
+    for name, argument, short, long in commands:
+        sub = subparsers.add_parser(name, help=short, description=long)
+        sub.add_argument(argument, help=f"the {argument} to convert")
+        _add_platform(sub)
     return parser
 
 
@@ -61,35 +93,41 @@ def _add_platform(parser: argparse.ArgumentParser) -> None:
         "--platform",
         choices=["windows", "posix"],
         default=None,
-        help="path flavor to use (default: the current operating system)",
+        help="native path flavor to use (default: the current operating system)",
     )
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     """Run the command line interface. Returns the process exit status."""
-    parser = _build_parser()
-    args = parser.parse_args(argv)
+    args = _build_parser().parse_args(argv)
+    # Paths may hold any Unicode character; a pipe on Windows defaults to a
+    # legacy code page, so write UTF-8 to standard output and standard error.
+    for stream in (sys.stdout, sys.stderr):
+        if isinstance(stream, io.TextIOWrapper):
+            stream.reconfigure(encoding="utf-8")
     try:
-        if args.command == "decode":
-            print(_decode(args.hex, args.platform))
-        else:
-            print(_encode(args.path, args.platform))
-    except (FlatPathError, ValueError) as error:
+        print(_run(args.command, args, args.platform))
+    except ValueError as error:
         print(f"lvpath: {error}", file=sys.stderr)
         return 1
     return 0
 
 
-def _decode(raw_hex: str, platform: str | None) -> str:
+def _run(command: str, args: argparse.Namespace, platform: str | None) -> str:
+    if command == "to-native":
+        return str(from_portable_path(args.text, platform=platform))
+    if command == "to-labview":
+        return to_portable_path(args.path, platform=platform)
+    if command == "decode":
+        return str(from_flat_path(_hex_bytes(args.hex), platform=platform))
+    return to_flat_path(args.path, platform=platform).hex()
+
+
+def _hex_bytes(raw_hex: str) -> bytes:
     try:
-        data = bytes.fromhex(raw_hex.replace(" ", ""))
+        return bytes.fromhex(raw_hex.replace(" ", ""))
     except ValueError as error:
         raise ValueError(f"not valid hex: {error}") from error
-    return str(from_flat_path(data, platform=platform))
-
-
-def _encode(path: str, platform: str | None) -> str:
-    return to_flat_path(path, platform=platform).hex()
 
 
 if __name__ == "__main__":

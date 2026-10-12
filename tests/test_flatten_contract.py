@@ -21,7 +21,8 @@ def test_golden_vector_has_every_documented_field() -> None:
     path_type, count = struct.unpack_from(">HH", GOLDEN, 8)
     assert signature == b"PTH0"
     assert total == len(GOLDEN) - 8 == 0x0B
-    assert path_type == FlatPathType.ABSOLUTE == 0
+    assert path_type == 0
+    assert path_type == FlatPathType.ABSOLUTE
     assert count == 2
     # Two Pascal strings: 01 'C', then 04 'file'.
     assert GOLDEN[12:14] == bytes([1]) + b"C"
