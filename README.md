@@ -114,10 +114,10 @@ rows are covered by synthetic tests that follow the same convention:
 - Text is normalised by `pathlib`: repeated separators collapse, a trailing slash and
   `.` components are dropped, so `/C/x/` writes back as `/C/x`. A backslash inside a
   value read on Windows is a separator (`/C/x\y` reads as `C:\x\y`).
-- The sibling `lvconfig` library gives the same results on drive, UNC and relative
-  values in normal form. lvpath refuses the values it cannot convert faithfully
-  (`C:file`, `D:`, `\dir`, `//server`, a POSIX absolute path on Windows) where
-  lvconfig rewrites them, and normalises text through `pathlib` where lvconfig only
+- The sibling `lvconfig` library (0.3.0 and later) gives the same results on drive,
+  UNC and relative values in normal form, and refuses the same values lvpath refuses
+  (`C:file`, `D:`, `\dir`, `//server`, a POSIX absolute path on Windows). The one
+  difference left: lvpath normalises text through `pathlib`, where lvconfig only
   swaps separators.
 
 ## Flattened form
