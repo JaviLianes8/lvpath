@@ -84,7 +84,8 @@ except PortablePathError:
 ```
 
 The rules below are checked against path values in files shipped with LabVIEW 2026
-(the test suite carries a verbatim excerpt in `tests/fixtures/labview2026_paths.json`).
+(`tests/fixtures/labview2026_paths.json` records each value with the file and setting it
+was found in; the NI files themselves are not copied).
 No shipped file holds a bare drive or a UNC value, so the `/D` and `//server/share/dir`
 rows are covered by synthetic tests that follow the same convention:
 

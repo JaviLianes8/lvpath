@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.3.1]
+
+- The LabVIEW 2026 path fixture no longer carries source lines copied from NI files: each
+  row keeps only the path value, its expected renderings, and where it was found (file and
+  setting). The sdist is limited to the package, the tests and the docs.
+
 ## [0.3.0]
 
 - Added the portable path form LabVIEW writes into configuration and project

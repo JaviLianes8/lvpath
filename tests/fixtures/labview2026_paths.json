@@ -1,107 +1,107 @@
 {
-  "description": "Path values copied verbatim from files shipped with LabVIEW 2026 (64-bit). 'raw' is the exact source line; 'portable' is the path value in it; 'windows' and 'posix' are the expected native renderings (null: conversion must fail). 'native_form' holds values an NI file stores in native Windows form.",
+  "description": "Path values found in files shipped with LabVIEW 2026 (64-bit). Each row records where the value was seen ('source' file and the setting 'key') and the value itself; the source lines are not copied. 'portable' is the stored value; 'windows' and 'posix' are the expected native renderings (null: conversion must fail). 'native_form' holds values an NI file stores in native Windows form.",
   "portable_form": [
     {
       "source": "C:/Program Files/National Instruments/LabVIEW 2026/project/Hobbyist/LINX Firmware Wizard Config.ini",
-      "raw": "ArduinoBasePath = \"/C/Program Files (x86)/Arduino\"",
+      "key": "ArduinoBasePath",
       "portable": "/C/Program Files (x86)/Arduino",
       "windows": "C:\\Program Files (x86)\\Arduino",
       "posix": "/C/Program Files (x86)/Arduino"
     },
     {
       "source": "C:/Program Files/National Instruments/LabVIEW 2026/resource/Framework/Providers/lvrealtime/default ini/Def_RTCommon.ini",
-      "raw": "WebServer.RootPath=/c/ni-rt/system/www",
+      "key": "WebServer.RootPath",
       "portable": "/c/ni-rt/system/www",
       "windows": "c:\\ni-rt\\system\\www",
       "posix": "/c/ni-rt/system/www"
     },
     {
       "source": "C:/Program Files/National Instruments/LabVIEW 2026/resource/Framework/Providers/lvrealtime/default ini/Def_RTCommon.ini",
-      "raw": "WebServer.LogPath=/c/ni-rt/system/www/www.log",
+      "key": "WebServer.LogPath",
       "portable": "/c/ni-rt/system/www/www.log",
       "windows": "c:\\ni-rt\\system\\www\\www.log",
       "posix": "/c/ni-rt/system/www/www.log"
     },
     {
       "source": "C:/Program Files/National Instruments/LabVIEW 2026/resource/Framework/Providers/lvrealtime/default ini/Def_RTCommon.ini",
-      "raw": "RTTarget.ApplicationPath=/c/ni-rt/startup/startup.rtexe",
+      "key": "RTTarget.ApplicationPath",
       "portable": "/c/ni-rt/startup/startup.rtexe",
       "windows": "c:\\ni-rt\\startup\\startup.rtexe",
       "posix": "/c/ni-rt/startup/startup.rtexe"
     },
     {
       "source": "C:/Program Files/National Instruments/LabVIEW 2026/resource/Framework/Providers/lvrealtime/default ini/Def_RTCommon.ini",
-      "raw": "RTTarget.VIPath=/c/ni-rt/startup",
+      "key": "RTTarget.VIPath",
       "portable": "/c/ni-rt/startup",
       "windows": "c:\\ni-rt\\startup",
       "posix": "/c/ni-rt/startup"
     },
     {
       "source": "C:/Program Files/National Instruments/LabVIEW 2026/resource/Framework/Providers/lvrealtime/default ini/Def_LINXprovider.ini",
-      "raw": "RTTarget.VIPath=\"/home/lvuser/natinst/bin\"",
+      "key": "RTTarget.VIPath",
       "portable": "/home/lvuser/natinst/bin",
       "windows": null,
       "posix": "/home/lvuser/natinst/bin"
     },
     {
       "source": "C:/Program Files/National Instruments/LabVIEW 2026/ProjectTemplates/Source/Core/Channeled Message Handler/Channeled Message Handler.lvproj",
-      "raw": "<Property Name=\"Bld_localDestDir\" Type=\"Path\">../builds/NI_AB_PROJECTNAME/Main Application</Property>",
+      "key": "Bld_localDestDir",
       "portable": "../builds/NI_AB_PROJECTNAME/Main Application",
       "windows": "..\\builds\\NI_AB_PROJECTNAME\\Main Application",
       "posix": "../builds/NI_AB_PROJECTNAME/Main Application"
     },
     {
       "source": "C:/Program Files/National Instruments/LabVIEW 2026/ProjectTemplates/Source/Core/Channeled Message Handler/Channeled Message Handler.lvproj",
-      "raw": "<Property Name=\"Destination[0].path\" Type=\"Path\">../builds/NI_AB_PROJECTNAME/Main Application/Main.exe</Property>",
+      "key": "Destination[0].path",
       "portable": "../builds/NI_AB_PROJECTNAME/Main Application/Main.exe",
       "windows": "..\\builds\\NI_AB_PROJECTNAME\\Main Application\\Main.exe",
       "posix": "../builds/NI_AB_PROJECTNAME/Main Application/Main.exe"
     },
     {
       "source": "C:/Program Files/National Instruments/LabVIEW 2026/examples/File IO/DataPlugins/ATML/DataPlugins - ATML.lvproj",
-      "raw": "<Property Name=\"Bld_localDestDir\" Type=\"Path\">../ATML 5.0/build</Property>",
+      "key": "Bld_localDestDir",
       "portable": "../ATML 5.0/build",
       "windows": "..\\ATML 5.0\\build",
       "posix": "../ATML 5.0/build"
     },
     {
       "source": "C:/Program Files/National Instruments/LabVIEW 2026/examples/Application Control/Actor Framework As PPL/Actor Framework as Release PPL.lvproj",
-      "raw": "<Property Name=\"Bld_localDestDir\" Type=\"Path\">vi.lib/ActorFramework</Property>",
+      "key": "Bld_localDestDir",
       "portable": "vi.lib/ActorFramework",
       "windows": "vi.lib\\ActorFramework",
       "posix": "vi.lib/ActorFramework"
     },
     {
       "source": "C:/Program Files/National Instruments/LabVIEW 2026/vi.lib/MakerHub/Toolbox/LMH-Toolbox.lvproj",
-      "raw": "<Property Name=\"Bld_excludedDirectory[1]\" Type=\"Path\">resource/objmgr</Property>",
+      "key": "Bld_excludedDirectory[1]",
       "portable": "resource/objmgr",
       "windows": "resource\\objmgr",
       "posix": "resource/objmgr"
     },
     {
       "source": "C:/Program Files/National Instruments/LabVIEW 2026/vi.lib/MakerHub/Toolbox/LMH-Toolbox.lvproj",
-      "raw": "<Property Name=\"Bld_excludedDirectory[2]\" Type=\"Path\">/C/Users/lvadmin/Documents/LabVIEW Data/InstCache</Property>",
+      "key": "Bld_excludedDirectory[2]",
       "portable": "/C/Users/lvadmin/Documents/LabVIEW Data/InstCache",
       "windows": "C:\\Users\\lvadmin\\Documents\\LabVIEW Data\\InstCache",
       "posix": "/C/Users/lvadmin/Documents/LabVIEW Data/InstCache"
     },
     {
       "source": "C:/Program Files/National Instruments/LabVIEW 2026/vi.lib/MakerHub/Toolbox/LMH-Toolbox.lvproj",
-      "raw": "<Property Name=\"Destination[0].path\" Type=\"Path\">/C/github/labviewhacker/LVH-Builds/NI_AB_PROJECTNAME/Components/Install Project/LVH - Install Project.exe</Property>",
+      "key": "Destination[0].path",
       "portable": "/C/github/labviewhacker/LVH-Builds/NI_AB_PROJECTNAME/Components/Install Project/LVH - Install Project.exe",
       "windows": "C:\\github\\labviewhacker\\LVH-Builds\\NI_AB_PROJECTNAME\\Components\\Install Project\\LVH - Install Project.exe",
       "posix": "/C/github/labviewhacker/LVH-Builds/NI_AB_PROJECTNAME/Components/Install Project/LVH - Install Project.exe"
     },
     {
       "source": "C:/Program Files/National Instruments/LabVIEW 2026/examples/Structures/Disable Structures/Disable Structures.lvproj",
-      "raw": "<Property Name=\"utf.report.atml.path\" Type=\"Path\">ATML report.xml</Property>",
+      "key": "utf.report.atml.path",
       "portable": "ATML report.xml",
       "windows": "ATML report.xml",
       "posix": "ATML report.xml"
     },
     {
       "source": "C:/Program Files/National Instruments/LabVIEW 2026/examples/Structures/Disable Structures/Disable Structures.lvproj",
-      "raw": "<Property Name=\"utf.create.editor.path\" Type=\"Path\"></Property>",
+      "key": "utf.create.editor.path",
       "portable": "",
       "windows": null,
       "posix": null
@@ -110,13 +110,13 @@
   "native_form": [
     {
       "source": "C:/Program Files/National Instruments/LabVIEW 2026/resource/Framework/Providers/lvremotewindows/default ini/Def_RemoteWindowsCommon.ini",
-      "raw": "WebServer.RootPath=C:\\Program Files\\National Instruments\\LabVIEW 2013\\www",
+      "key": "WebServer.RootPath",
       "windows": "C:\\Program Files\\National Instruments\\LabVIEW 2013\\www",
       "portable": "/C/Program Files/National Instruments/LabVIEW 2013/www"
     },
     {
       "source": "C:/Program Files/National Instruments/LabVIEW 2026/resource/Framework/Providers/lvremotewindows/default ini/Def_RemoteWindowsCommon.ini",
-      "raw": "Deployment_DownloadInstallerPath=c:\\NI Installers",
+      "key": "Deployment_DownloadInstallerPath",
       "windows": "c:\\NI Installers",
       "portable": "/c/NI Installers"
     }

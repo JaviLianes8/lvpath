@@ -25,7 +25,7 @@ from ._kinds import NotAPathError, PathKind
 from ._platform import Platform
 from ._portable import PortablePathError, from_portable_path, to_portable_path
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 
 __all__ = [
     "SIGNATURE",

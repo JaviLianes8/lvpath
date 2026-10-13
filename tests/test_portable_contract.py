@@ -1,7 +1,7 @@
 """Contract: the complete portable-path promise against real LabVIEW 2026 files.
 
-``fixtures/labview2026_paths.json`` holds path lines copied verbatim from files
-shipped with LabVIEW 2026, each with its source path. Every value must convert in
+``fixtures/labview2026_paths.json`` holds path values found in files shipped with
+LabVIEW 2026, each with the source file and setting it was seen in. Every value must convert in
 both directions on both platform flavors and round-trip exactly. The NI forum
 example and the NI ``PTH0`` golden vector tie the portable string, the native
 path and the flattened bytes together.
@@ -9,7 +9,6 @@ path and the flattened bytes together.
 
 from __future__ import annotations
 
-import html
 import json
 import re
 from pathlib import Path
@@ -32,16 +31,6 @@ FIXTURE = json.loads(
 PORTABLE: list[dict[str, Any]] = FIXTURE["portable_form"]
 NATIVE: list[dict[str, Any]] = FIXTURE["native_form"]
 GOLDEN = bytes.fromhex("505448300000000b0000000201430466696c65")
-_PROPERTY = re.compile(r'^<Property Name="[^"]+" Type="Path">(.*)</Property>$')
-
-
-def _value_in(raw: str) -> str:
-    """Pull the path value out of a verbatim ``.lvproj`` or ``.ini`` line."""
-    match = _PROPERTY.match(raw)
-    if match:
-        return html.unescape(match.group(1))
-    value = raw.partition("=")[2].strip()
-    return value[1:-1] if len(value) >= 2 and value[0] == value[-1] == '"' else value
 
 
 def _ids(rows: list[dict[str, Any]]) -> list[str]:
@@ -60,10 +49,11 @@ def test_the_fixture_covers_every_form() -> None:
     assert len(NATIVE) >= 1, "native Windows form"
 
 
-@pytest.mark.parametrize("row", PORTABLE + NATIVE, ids=_ids(PORTABLE) + _ids(NATIVE))
-def test_fixture_values_are_the_verbatim_source_lines(row: dict[str, Any]) -> None:
-    expected = row["windows"] if row in NATIVE else row["portable"]
-    assert _value_in(row["raw"]) == expected
+def test_every_row_records_its_provenance_and_no_source_line() -> None:
+    for row in PORTABLE + NATIVE:
+        assert row["source"].startswith("C:/Program Files/National Instruments/LabVIEW 2026/")
+        assert row["key"]
+        assert "raw" not in row
 
 
 @pytest.mark.parametrize("row", PORTABLE, ids=_ids(PORTABLE))
