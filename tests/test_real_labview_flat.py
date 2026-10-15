@@ -19,7 +19,15 @@ from typing import Any
 
 import pytest
 
-from lvpath import FlatPathError, from_flat_path, parse_flat_path, to_flat_path
+from lvpath import (
+    FlatPath,
+    FlatPathError,
+    FlatPathType,
+    NotAPathError,
+    from_flat_path,
+    parse_flat_path,
+    to_flat_path,
+)
 
 _FIXTURE = Path(__file__).parent / "fixtures" / "labview2026_flat.json"
 _DATA = json.loads(_FIXTURE.read_text(encoding="utf-8"))
@@ -91,12 +99,14 @@ def test_the_absolute_path_with_no_component_is_the_posix_root() -> None:
         from_flat_path(data, platform="windows")
 
 
-def test_path_type_two_is_kept_but_not_interpreted() -> None:
+def test_path_type_two_is_labviews_not_a_path_both_ways() -> None:
     data = _by_note("the only record with path type 2")
-    assert parse_flat_path(data).components == ()
+    assert parse_flat_path(data) == FlatPath(int(FlatPathType.NOT_A_PATH), ())
     for platform in ("windows", "posix"):
-        with pytest.raises(FlatPathError, match="path type 2"):
+        with pytest.raises(NotAPathError):
             from_flat_path(data, platform=platform)
+        assert to_flat_path("", platform=platform) == data
+        assert to_flat_path(None, platform=platform) == data
 
 
 def test_a_symbolic_prefix_is_refused_on_both_flavors() -> None:

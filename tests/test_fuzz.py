@@ -58,7 +58,7 @@ def test_mutated_flattened_bytes_parse_or_raise_flat_path_error() -> None:
         for platform in ("windows", "posix"):
             try:
                 pure = from_flat_path(data, platform=platform)
-            except FlatPathError:
+            except (FlatPathError, NotAPathError):
                 continue
             assert to_flat_path(pure, platform=platform) == data
 

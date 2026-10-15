@@ -47,10 +47,20 @@ def test_the_platform_is_checked_first_even_for_an_empty_path(
         call(3)
 
 
+def test_path_objects_follow_the_flavor_rule() -> None:
+    with pytest.raises(PortablePathError, match="anchored"):
+        to_os_path(PureWindowsPath("C:/x"), platform="posix")
+    with pytest.raises(PortablePathError, match="anchored"):
+        path_kind(PurePosixPath("/usr"), platform="windows")
+    assert to_os_path(PurePosixPath("a/b"), platform="windows") == PureWindowsPath("a/b")
+    with pytest.raises(PortablePathError, match="drive-relative"):
+        from_portable_path(PureWindowsPath("C:x"))
+
+
 def test_path_objects_are_still_read_as_text() -> None:
-    assert to_os_path(PureWindowsPath("C:/x"), platform="windows") == PureWindowsPath("C:/x")  # type: ignore[arg-type]
-    assert path_kind(PurePosixPath("/x"), platform="posix") is PathKind.ABSOLUTE  # type: ignore[arg-type]
-    assert from_portable_path(PurePosixPath("/x"), platform="posix") == PurePosixPath("/x")  # type: ignore[arg-type]
+    assert to_os_path(PureWindowsPath("C:/x"), platform="windows") == PureWindowsPath("C:/x")
+    assert path_kind(PurePosixPath("/x"), platform="posix") is PathKind.ABSOLUTE
+    assert from_portable_path(PurePosixPath("/x"), platform="posix") == PurePosixPath("/x")
 
 
 def test_a_backslash_component_may_not_cross_to_windows() -> None:
@@ -102,3 +112,29 @@ def test_values_pickle_under_the_public_module() -> None:
         data = pickle.dumps(value)
         assert b"lvpath._" not in data
         assert pickle.loads(data) == value
+
+
+# Written by PyPI lvpath 0.3.1: pickle.dumps(FlatPath(FlatPathType.RELATIVE, ["", "a"]))
+# with protocols 2 and 5, and pickle.dumps(PathKind.RELATIVE, protocol=2).
+_OLD_FLAT = [
+    "8002636c76706174682e5f666c617474656e0a466c6174506174680a7100298171017d7102285809000000"
+    "706174685f747970657103636c76706174682e5f666c617474656e0a466c617450617468547970650a7104"
+    "4b01857105527106580a000000636f6d706f6e656e747371075d71082858000000007109580100000061710a"
+    "6575622e",
+    "80059565000000000000008c0f6c76706174682e5f666c617474656e948c08466c6174506174689493942981"
+    "947d94288c09706174685f747970659468008c0c466c617450617468547970659493944b01859452948c0a63"
+    "6f6d706f6e656e7473945d94288c00948c0161946575622e",
+]
+_OLD_KIND = (
+    "8002636c76706174682e5f6b696e64730a506174684b696e640a71005808000000"
+    "72656c617469766571018571025271032e"
+)
+
+
+def test_pickles_written_by_0_3_1_load_normalised() -> None:
+    for text in _OLD_FLAT:
+        flat = pickle.loads(bytes.fromhex(text))
+        assert flat == FlatPath(1, ("", "a"))
+        assert type(flat.path_type) is int and type(flat.components) is tuple
+        assert hash(flat) == hash(FlatPath(1, ("", "a")))
+    assert pickle.loads(bytes.fromhex(_OLD_KIND)) is PathKind.RELATIVE

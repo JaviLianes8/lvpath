@@ -124,21 +124,24 @@ lvpath.FlatPathError: symbolic path prefix '<vilib>' has no PurePath meaning
 
 ```
 
-`from_flat_path` and `to_flat_path` interpret two path types:
+The path type codes are those of LabVIEW's `cintools/extcode.h` (`FlatPathType`), and
+`from_flat_path` and `to_flat_path` interpret three of them:
 
-- `0`, absolute (`FlatPathType.ABSOLUTE`). On Windows the first component is the drive
-  letter without its colon; on POSIX the components follow the root, and no component
-  at all is `/`. That empty absolute path has no Windows `PurePath`.
-- `1`, relative (`FlatPathType.RELATIVE`). No component at all is `.`.
+- `0`, absolute (`ABSOLUTE`). On Windows the first component is the drive letter
+  without its colon; on POSIX the components follow the root, and no component at all
+  is `/`. That empty absolute path has no Windows `PurePath`.
+- `1`, relative (`RELATIVE`). No component at all is `.`.
 - In both, an empty component means one level up, `..` in text.
+- `2`, `<Not A Path>` (`NOT_A_PATH`), with no component. `to_flat_path("")` and
+  `to_flat_path(None)` write it; `from_flat_path` raises `NotAPathError` for it.
 
-Everything else raises `FlatPathError` in the bridge: another path type (LabVIEW 2026
-stores one record of type `2`, with no component, in `resource/labview.rsc`; its
-meaning is not established), a symbolic first component such as `<vilib>`, a first
-Windows component that is not one letter, a literal `.` or `..` component, a component
-holding `/` (or `\` or `:` on Windows), UNC and driveless rooted Windows paths,
-drive-relative paths and POSIX paths starting with `//`. Components are ASCII, at most
-255 characters, and at most 65535 of them.
+Everything else raises `FlatPathError` in the bridge: `3`, UNC (`UNC`; no UNC record
+exists in the LabVIEW install to confirm its component layout, so it is not guessed),
+any other code, a symbolic first component such as `<vilib>`, a first Windows component
+that is not one letter, a literal `.` or `..` component, a component holding `/` (or `\`
+or `:` on Windows), UNC and driveless rooted Windows paths, drive-relative paths and
+POSIX paths starting with `//`. Components are ASCII, at most 255 characters, and at
+most 65535 of them.
 
 ### Ground truth for the flattened form
 
@@ -151,14 +154,17 @@ drive-relative paths and POSIX paths starting with `//`. Components are ASCII, a
   321,686 records of type `0`, 27,879 of type `1` and one of type `2`. Of the 24,024
   relative links that start with empty components, 21,765 name an existing file when
   each empty component is read as one level up from the file holding the link; no
-  record holds a literal `..`. Eleven chosen records, with file and offset, are in
-  `tests/fixtures/labview2026_flat.json`.
+  record holds a literal `..`. The one type `2` record, `PTH0 00000004 0002 0000`, is
+  exactly what `to_flat_path("")` writes. Eleven chosen records, with file and offset,
+  are in `tests/fixtures/labview2026_flat.json`.
+- `cintools/extcode.h` of LabVIEW 2026 lists the path type codes in order: absolute,
+  relative, not-a-path, UNC.
 
 ## Errors
 
 | Exception | Base | Raised for |
 | --- | --- | --- |
-| `NotAPathError` | `ValueError` | the empty `<Not A Path>` value read as an OS path |
+| `NotAPathError` | `ValueError` | `<Not A Path>` (an empty string, or flattened type `2`) read as an OS path |
 | `PortablePathError` | `ValueError` | a value with no faithful counterpart in the portable or native form |
 | `FlatPathError` | `ValueError` | malformed `PTH0` bytes, bad components, a path the bridge cannot represent |
 | `ValueError` | | an unknown `platform` name |
@@ -200,13 +206,21 @@ unchanged.
 
 ## Upgrading from 0.3
 
-The public names and signatures are the same, and `python -m lvpath` is new. Behaviour
-that changed (the same list as CHANGELOG 1.0.0):
+The public names and parameters are the same; `python -m lvpath`,
+`FlatPathType.NOT_A_PATH` and `FlatPathType.UNC` are new. Behaviour that changed (the
+same list as CHANGELOG 1.0.0):
 
 - An empty flattened component now decodes as `..` and `..` encodes as an empty
   component, which is how LabVIEW 2026 stores relative links (21,765 links in its own
   files resolve that way). 0.3.1 dropped the empty components, so
   `('', '', 'NI_MDF.lvlib')` decoded as `NI_MDF.lvlib`, and wrote `..` as two dots.
+- `<Not A Path>` in the flattened form is path type 2 with no component, the code
+  LabVIEW's `cintools/extcode.h` gives it and the record LabVIEW 2026 stores in
+  `resource/labview.rsc`. `to_flat_path("")` and `to_flat_path(None)` now write it (0.3.1
+  wrote `""` as an empty relative path, which decodes as `.`, and raised
+  `AttributeError` for `None`), and `from_flat_path` raises `NotAPathError` for it (0.3.1:
+  `FlatPathError`). `FlatPathType` gains `NOT_A_PATH` (2) and `UNC` (3); a UNC flattened
+  path is still refused with `FlatPathError`.
 - `from_flat_path` refuses with `FlatPathError` what 0.3.1 misread: a symbolic
   `<vilib>`-style first component of an absolute path, a first Windows component that is
   not one drive letter (0.3.1 produced `usr:\lib`), literal `.` and `..` components, and
@@ -214,28 +228,38 @@ that changed (the same list as CHANGELOG 1.0.0):
 - `to_flat_path` refuses a POSIX path starting with `//` (0.3.1 dropped one slash) and a
   rooted Windows path without a drive such as `\usr\x` (0.3.1 wrote it as a relative path
   whose first component was a backslash).
-- A `PurePath` given to `to_lv_path` or `to_flat_path` with `platform=None` keeps its own
-  flavor, as `to_portable_path` already did (0.3.1 re-read it with the running system's
-  flavor). When `platform` names the other flavor, an anchored path, and on the way to
-  Windows a component holding a backslash or a colon, raise `PortablePathError` or
-  `FlatPathError` (0.3.1 produced a different path).
+- One flavor rule for `PurePath` arguments in every function: a `PurePath` keeps its own
+  flavor unless `platform` names the other one, and then only a relative path may cross,
+  with no backslash or colon inside a component on the way to Windows; anything else
+  raises `PortablePathError` (`FlatPathError` in `to_flat_path`). 0.3.1 re-read a
+  `PurePath` with the flavor of `platform` (or of the running system) in `to_lv_path`,
+  `to_flat_path`, `to_os_path` and `path_kind`, producing a different path for anchored
+  ones, and `from_portable_path` raised `TypeError` for a `PurePath` on Windows. The
+  annotations of `to_os_path`, `path_kind` and `from_portable_path` now include
+  `PurePath`.
 - `platform` is checked before anything else in every function: an unknown name raises
   `ValueError` and a value that is not a `str`, `Platform` or `None` raises `TypeError`
-  (0.3.1 raised `AttributeError`) even when the path is empty. In 0.3.1,
-  `path_kind("", platform="bogus")` returned `NOT_A_PATH`, `to_lv_path` and
-  `to_portable_path` returned `""`, and `to_os_path` and `from_portable_path` raised
-  `NotAPathError`.
+  (0.3.1 raised `AttributeError`), even when the path is empty or the bytes are malformed.
+  In 0.3.1, `path_kind("", platform="bogus")` returned `NOT_A_PATH`, `to_lv_path` and
+  `to_portable_path` returned `""`, `to_os_path` and `from_portable_path` raised
+  `NotAPathError` and `from_flat_path` raised `FlatPathError` for bad bytes.
+- Arguments of the wrong type raise `TypeError` with a short message. 0.3.1 returned
+  `'5'` for `to_portable_path(5)` and `"b'x'"` for `to_portable_path(b"x")`, raised
+  `AttributeError` for `to_lv_path(5)` and `to_flat_path(5)`, and raised `FlatPathError`
+  for `parse_flat_path` given a short `str`.
 - `FlatPath` checks its fields when built: a `bool` or non-integer path type and a
-  non-`str` component raise `TypeError`; a non-ASCII or over-long component and a
-  65,536th component raise `FlatPathError` (0.3.1 raised them later, in `to_bytes`). The
-  path type is stored as a plain `int` (an `IntEnum` member was kept as given) and the
-  components as a tuple. `build_flat_path` refuses a `str` as its components with
-  `TypeError` (0.3.1 split it into one-character components).
+  non-`str` component raise `TypeError` (0.3.1 accepted `FlatPath(0, "ab")`); a non-ASCII
+  or over-long component raises `FlatPathError` at once (0.3.1 raised it later, in
+  `to_bytes`). The path type is stored as a plain `int` (0.3.1 kept an `IntEnum` member as
+  given) and the components as a tuple. `build_flat_path` refuses a `str` as its
+  components with `TypeError` (0.3.1 split it into one-character components). A pickle
+  written by 0.3.1 loads with its fields normalised the same way.
 - Non-ASCII flattened bytes raise `FlatPathError` instead of `UnicodeDecodeError`.
-  `parse_flat_path`, `FlatPath.from_bytes` and `from_flat_path` read any object with the
-  buffer protocol (`bytes`, `bytearray`, `memoryview`, `array`, `mmap`), as 0.3.1 did at
-  run time, and are now typed for `bytes | bytearray | memoryview`; a `str` raises
-  `TypeError` with a short message.
+  `parse_flat_path`, `FlatPath.from_bytes` and `from_flat_path` read the raw bytes of any
+  object with the buffer protocol (`bytes`, `bytearray`, `memoryview`, `array`, `mmap`)
+  and are typed for `bytes | bytearray | memoryview`. 0.3.1 read `bytes` and
+  `bytearray` only: a `memoryview` or `array` holding a component raised
+  `AttributeError`, and a wide `array` was measured in items.
 - Error messages quote at most 40 characters of a value and several are reworded; the
   exception types are unchanged except where listed here. The public classes
   (`FlatPath`, `FlatPathType`, `PathKind`, `Platform` and the three exceptions) report
@@ -243,7 +267,8 @@ that changed (the same list as CHANGELOG 1.0.0):
   load.
 - Command line: a usage mistake still exits 2, now with lines of at most 200 characters;
   a refused value prints one bounded line and exits 1; a closed output pipe exits 1
-  quietly; invalid hex no longer echoes the parser's detail.
+  quietly; invalid hex no longer echoes the parser's detail; `lvpath encode ''` prints the
+  not-a-path bytes and `lvpath decode` of them is refused.
 
 ## What it does not do
 

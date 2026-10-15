@@ -28,21 +28,25 @@ _HEADER = struct.Struct(">4sIHH")  # signature, length, path type, count
 
 
 class FlatPathType(IntEnum):
-    """The path type codes lvpath interprets.
+    """The path type codes, as LabVIEW's ``cintools/extcode.h`` numbers them.
 
-    ``ABSOLUTE`` is the code of NI's ``C:\\File`` example. ``RELATIVE`` is the
-    code of the relative paths LabVIEW 2026 stores in its own VI files, where
-    an empty component means one level up. Other codes are kept as read and
-    never interpreted.
+    ``ABSOLUTE`` is also the code of NI's ``C:\\File`` example; ``RELATIVE`` is
+    the code of the relative links LabVIEW 2026 stores in its own VI files, where
+    an empty component means one level up; ``NOT_A_PATH`` is the code of the
+    ``<Not A Path>`` record in LabVIEW 2026's ``resource/labview.rsc``. ``UNC``
+    is named but its component layout is not decoded. Other codes are kept as
+    read and never interpreted.
 
-    >>> FlatPathType(0), FlatPathType(1)
-    (<FlatPathType.ABSOLUTE: 0>, <FlatPathType.RELATIVE: 1>)
+    >>> [member.name for member in FlatPathType]
+    ['ABSOLUTE', 'RELATIVE', 'NOT_A_PATH', 'UNC']
     """
 
     __module__ = "lvpath"
 
     ABSOLUTE = 0
     RELATIVE = 1
+    NOT_A_PATH = 2
+    UNC = 3
 
 
 @dataclass(frozen=True)
@@ -68,6 +72,12 @@ class FlatPath:
     def __post_init__(self) -> None:
         object.__setattr__(self, "path_type", check_type(self.path_type))
         object.__setattr__(self, "components", check_components(self.components))
+
+    def __setstate__(self, state: dict[str, object]) -> None:
+        # Unpickling skips __post_init__; check the fields here too, so a pickle
+        # written by 0.3.1 (a list of components, an enum type) loads normalised.
+        object.__setattr__(self, "path_type", check_type(state.get("path_type")))
+        object.__setattr__(self, "components", check_components(state.get("components")))
 
     @property
     def is_absolute(self) -> bool:

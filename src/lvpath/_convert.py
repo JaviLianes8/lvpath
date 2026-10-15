@@ -11,12 +11,14 @@ from ._portable import PortablePathError
 from ._text import type_name
 
 
-def path_kind(lv_path: str, *, platform: Platform | str | None = None) -> PathKind:
+def path_kind(lv_path: str | PurePath, *, platform: Platform | str | None = None) -> PathKind:
     """Classify a LabVIEW path string as absolute, relative or not-a-path.
 
     An empty string is LabVIEW's ``<Not A Path>`` value on every platform. The
     rest follows ``pathlib``: on Windows only a drive with a root or a UNC share
-    is absolute, so ``C:file`` and ``\\\\dir`` are relative.
+    is absolute, so ``C:file`` and ``\\\\dir`` are relative. A ``PurePath``
+    keeps its own flavor unless ``platform`` names the other one, which only a
+    relative path may cross.
 
     >>> path_kind("C:\\\\x", platform="windows")
     <PathKind.ABSOLUTE: 'absolute'>
@@ -31,13 +33,14 @@ def path_kind(lv_path: str, *, platform: Platform | str | None = None) -> PathKi
     return PathKind.ABSOLUTE if pure.is_absolute() else PathKind.RELATIVE
 
 
-def to_os_path(lv_path: str, *, platform: Platform | str | None = None) -> PurePath:
+def to_os_path(lv_path: str | PurePath, *, platform: Platform | str | None = None) -> PurePath:
     """Parse a LabVIEW path string into a ``PurePath`` of the platform flavor.
 
     Raises :class:`NotAPathError` for the empty not-a-path value. Forward
     slashes are accepted when parsing a Windows path. This reads the host's
     native text form; for the portable form LabVIEW writes into configuration
     and project files (``/C/DIR1/DIR2``) use :func:`lvpath.from_portable_path`.
+    A ``PurePath`` follows the flavor rule of :func:`to_lv_path`.
 
     >>> to_os_path("C:\\\\Users\\\\test\\\\data.txt", platform="windows")
     PureWindowsPath('C:/Users/test/data.txt')
@@ -75,9 +78,9 @@ def to_lv_path(os_path: PurePath | str | None, *, platform: Platform | str | Non
 def _parse(lv_path: object, platform: Platform | str | None) -> PurePath | None:
     target = flavor(resolve(platform))
     if isinstance(lv_path, PurePath):
-        return target(lv_path)
+        return as_pure(lv_path, platform, PortablePathError)
     if not isinstance(lv_path, str):
-        raise TypeError(f"a LabVIEW path string must be a str, not {type_name(lv_path)}")
+        raise TypeError(f"a LabVIEW path must be a str or a PurePath, not {type_name(lv_path)}")
     if lv_path == "":
         return None
     return target(str.__str__(lv_path))

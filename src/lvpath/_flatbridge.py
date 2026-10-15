@@ -1,11 +1,14 @@
 """Bridge the PTH0 flattened form to and from ``pathlib.PurePath``.
 
-Two path types are interpreted: absolute (``0``) and relative (``1``). In both,
-an empty component means one level up, ``..`` in text: LabVIEW 2026 stores the
-relative links inside its own VI files that way. An absolute Windows path starts
-with its drive letter, without the colon; an absolute POSIX path lists the parts
-after the root. Anything else (another type code, a symbolic ``<vilib>`` prefix,
-a component that would read as a separator, a UNC share) raises
+The path types are those of LabVIEW's ``extcode.h``: absolute (``0``),
+relative (``1``), not-a-path (``2``) and UNC (``3``). In absolute and relative
+paths an empty component means one level up, ``..`` in text: LabVIEW 2026 stores
+the relative links inside its own VI files that way. An absolute Windows path
+starts with its drive letter, without the colon; an absolute POSIX path lists the
+parts after the root. Not-a-path decodes to :class:`NotAPathError`, as in
+:func:`lvpath.to_os_path`. Anything else (a UNC path, whose component layout has
+not been checked against LabVIEW output, an unknown type code, a symbolic
+``<vilib>`` prefix, a component that would read as a separator) raises
 :class:`FlatPathError`; the low-level :class:`FlatPath` codec still keeps such
 bytes exactly.
 """
@@ -18,13 +21,16 @@ from pathlib import PurePath, PurePosixPath, PureWindowsPath
 from ._coerce import as_pure
 from ._fields import FlatPathError
 from ._flatten import FlatPath, FlatPathType, parse_flat_path
+from ._kinds import NotAPathError
 from ._platform import Platform, flavor, resolve
 from ._text import quote
 
 _LETTERS = frozenset(string.ascii_letters)
 
 
-def to_flat_path(os_path: PurePath | str, *, platform: Platform | str | None = None) -> bytes:
+def to_flat_path(
+    os_path: PurePath | str | None, *, platform: Platform | str | None = None
+) -> bytes:
     """Encode an OS path into its PTH0 flattened byte string.
 
     A ``str`` is parsed with the flavor of ``platform`` (default: the running
@@ -32,13 +38,19 @@ def to_flat_path(os_path: PurePath | str, *, platform: Platform | str | None = N
     other one, which only a relative path may cross. ``..`` becomes an empty
     component. UNC, rooted driveless and drive-relative Windows paths, POSIX
     paths starting with ``//`` and components that are not ASCII or longer than
-    255 characters raise :class:`FlatPathError`.
+    255 characters raise :class:`FlatPathError`. ``None`` or ``""`` is LabVIEW's
+    ``<Not A Path>`` and encodes as path type ``2`` with no component.
 
+    >>> to_flat_path("", platform="windows").hex()
+    '505448300000000400020000'
     >>> to_flat_path("C:\\\\file", platform="windows").hex()
     '505448300000000b0000000201430466696c65'
     >>> parse_flat_path(to_flat_path("../sub.vi", platform="posix"))
     FlatPath(path_type=1, components=('', 'sub.vi'))
     """
+    resolve(platform)
+    if os_path is None or (isinstance(os_path, str) and os_path == ""):
+        return FlatPath(int(FlatPathType.NOT_A_PATH), ()).to_bytes()
     pure = as_pure(os_path, platform, FlatPathError)
     parts = [("" if part == ".." else part) for part in pure.parts]
     if not pure.anchor:
@@ -65,6 +77,7 @@ def from_flat_path(
 
     An empty component becomes ``..``; a relative path with no component is
     ``.``; the absolute path with no component is ``/`` on POSIX. Raises
+    :class:`NotAPathError` for not-a-path (type ``2``) and
     :class:`FlatPathError` for malformed bytes and for any path that has no
     faithful ``PurePath`` on the target, listed in the module notes; use
     :func:`lvpath.parse_flat_path` to inspect such a path instead.
@@ -74,8 +87,12 @@ def from_flat_path(
     >>> from_flat_path(FlatPath(1, ("", "", "lib.lvlib")).to_bytes(), platform="posix")
     PurePosixPath('../../lib.lvlib')
     """
-    flat = parse_flat_path(data)
     target = flavor(resolve(platform))
+    flat = parse_flat_path(data)
+    if flat.path_type == FlatPathType.NOT_A_PATH:
+        raise NotAPathError("LabVIEW not-a-path has no OS path")
+    if flat.path_type == FlatPathType.UNC:
+        raise FlatPathError("UNC flattened paths are not decoded: their layout is not verified")
     if not (flat.is_absolute or flat.is_relative):
         raise FlatPathError(f"path type {flat.path_type} has no PurePath meaning")
     parts = [_text_part(part, target) for part in flat.components]

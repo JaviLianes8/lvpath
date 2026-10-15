@@ -49,13 +49,16 @@ class PortablePathError(ValueError):
     __module__ = "lvpath"
 
 
-def from_portable_path(text: str, *, platform: Platform | str | None = None) -> PurePath:
+def from_portable_path(text: str | PurePath, *, platform: Platform | str | None = None) -> PurePath:
     """Parse LabVIEW's portable path string into a ``PurePath`` for ``platform``.
 
     On Windows ``/C/DIR1/DIR2`` becomes ``PureWindowsPath('C:/DIR1/DIR2')``,
     ``//server/share/dir`` becomes a UNC path and ``../a/b`` a relative path.
     A value already written in native Windows form (``C:\\DIR1``) is accepted
     as is. On POSIX the portable form is already native and is parsed directly.
+
+    A ``PurePath`` is taken as already native: it keeps its own flavor unless
+    ``platform`` names the other one, which only a relative path may cross.
 
     Raises :class:`NotAPathError` for the empty ``<Not A Path>`` value and
     :class:`PortablePathError` for a value with no Windows equivalent.
@@ -69,9 +72,9 @@ def from_portable_path(text: str, *, platform: Platform | str | None = None) -> 
     """
     target = resolve(platform)
     if isinstance(text, PurePath):
-        text = str(text)
+        return _native(text, platform)
     if not isinstance(text, str):
-        raise TypeError(f"a portable path string must be a str, not {type_name(text)}")
+        raise TypeError(f"a portable path must be a str or a PurePath, not {type_name(text)}")
     text = str.__str__(text)
     if text == "":
         raise NotAPathError("LabVIEW not-a-path has no OS path")
@@ -89,6 +92,13 @@ def from_portable_path(text: str, *, platform: Platform | str | None = None) -> 
         )
     pure = PureWindowsPath(text)
     _check_windows(pure, text)
+    return pure
+
+
+def _native(path: PurePath, platform: Platform | str | None) -> PurePath:
+    pure = as_pure(path, platform, PortablePathError)
+    if isinstance(pure, PureWindowsPath):
+        _check_windows(pure, str(pure))
     return pure
 
 
