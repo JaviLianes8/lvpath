@@ -1,0 +1,98 @@
+{
+  "scan": {
+    "labview": "LabVIEW 2026 Community 26.3.1f1 (Windows x64), install on the author's PC",
+    "scanned": "2026-10-15",
+    "records_by_path_type": {
+      "0": 321686,
+      "1": 27879,
+      "2": 1
+    },
+    "relative_links_with_up_levels": 24024,
+    "of_which_resolve_to_an_existing_file": 21765
+  },
+  "records": [
+    {
+      "source": "applibs/distkit/MDF/NIMdf.llb/DotNetFrameworkTargetType.ctl",
+      "offset": 264,
+      "note": "relative link with 2 level(s) up",
+      "path_type": 1,
+      "hex": "50544830000000130001000300000c4e495f4d44462e6c766c6962",
+      "resolves_to": "applibs/distkit/MDF/NI_MDF.lvlib"
+    },
+    {
+      "source": "applibs/distkit/MDF/NIMdf.llb/MDFBuildDevPartCVI_CVILVRTInstallRelocate.vi",
+      "offset": 366,
+      "note": "relative link with 1 level(s) up",
+      "path_type": 1,
+      "hex": "505448300000002300010002001d4d44462047656e6572617465204572726f7220436c75737465722e7669",
+      "resolves_to": "applibs/distkit/MDF/NIMdf.llb/MDF Generate Error Cluster.vi"
+    },
+    {
+      "source": "examples/Channels/Measure And Log/Measure And Log Main.vi",
+      "offset": 44521,
+      "note": "absolute, no part",
+      "path_type": 0,
+      "hex": "505448300000000400000000"
+    },
+    {
+      "source": "examples/Connectivity/Web Services/Weather Monitor/Client/Views/Get Table Values.vi",
+      "offset": 392,
+      "note": "relative link with 3 level(s) up",
+      "path_type": 1,
+      "hex": "5054483000000024000100050000000b4170706c69636174696f6e105765617468657220446174612e63746c",
+      "resolves_to": "examples/Connectivity/Web Services/Weather Monitor/Application/Weather Data.ctl"
+    },
+    {
+      "source": "examples/Design Patterns/Actor Framework/Classes/Customer Messages/Pick up Item Msg/Drop Message Core.vi",
+      "offset": 728,
+      "note": "relative link with 4 level(s) up",
+      "path_type": 1,
+      "hex": "50544830000000220001000600000000095574696c69746965730f4c6f63616c697a6174696f6e2e7669",
+      "resolves_to": "examples/Design Patterns/Actor Framework/Utilities/Localization.vi"
+    },
+    {
+      "source": "examples/MakerHub/LINX/Local IO Benchmarks/LINX - Analog Read Benchmark.vi",
+      "offset": 278,
+      "note": "relative link with 5 level(s) up",
+      "path_type": 1,
+      "hex": "50544830000000470001000c00000000000676692e6c6962084d616b6572487562044c494e58065075626c69630b5065726970686572616c7306416e616c6f670e416e616c6f6720526561642e7669",
+      "resolves_to": "vi.lib/MakerHub/LINX/Public/Peripherals/Analog/Analog Read.vi"
+    },
+    {
+      "source": "resource/labview.rsc",
+      "offset": 693316,
+      "note": "the only record with path type 2",
+      "path_type": 2,
+      "hex": "505448300000000400020000"
+    },
+    {
+      "source": "resource/dialog/QuickDrop/plugins/LMH-Toolbox/Front Panel Clean-Up.vi",
+      "offset": 324,
+      "note": "relative link with 6 level(s) up",
+      "path_type": 1,
+      "hex": "505448300000005e0001000c0000000000000676692e6c6962084d616b657248756207546f6f6c626f7807507269766174651446726f6e742050616e656c20436c65616e2055701e4c4d482d46726f6e742d50616e656c2d436c65616e2d55702e6c766c6962",
+      "resolves_to": "vi.lib/MakerHub/Toolbox/Private/Front Panel Clean Up/LMH-Front-Panel-Clean-Up.lvlib"
+    },
+    {
+      "source": "vi.lib/AppBuilder/AB_API_Simple/Build.vi",
+      "offset": 292,
+      "note": "symbolic <vilib> prefix",
+      "path_type": 0,
+      "hex": "505448300000003500000004073c76696c69623e0a4170704275696c6465720d41425f4150495f53696d706c650f4275696c64202870617468292e7669"
+    },
+    {
+      "source": "vi.lib/MakerHub/LINX/Private/Utilties/SSH/SSH Close.vi",
+      "offset": 9242,
+      "note": "absolute macOS path",
+      "path_type": 0,
+      "hex": "50544830000000250000000403757372036c69620673797374656d116c696273797374656d5f632e64796c6962"
+    },
+    {
+      "source": "vi.lib/Platform/dotnet.llb/To .NET Core Object.vi",
+      "offset": 324,
+      "note": "absolute Windows path, drive C",
+      "path_type": 0,
+      "hex": "505448300000005a0000000701430d50726f6772616d2046696c657306646f746e657406736861726564154d6963726f736f66742e4e4554436f72652e41707006382e302e32321a53797374656d2e507269766174652e436f72654c69622e646c6c"
+    }
+  ]
+}
