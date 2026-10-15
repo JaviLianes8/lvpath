@@ -130,5 +130,5 @@ def test_hostile_sizes_scale_linearly(call: Callable[[int], object]) -> None:
 
 
 def _swallow(call: Callable[[], object]) -> None:
-    with contextlib.suppress(_EXPECTED):
+    with contextlib.suppress(*_EXPECTED):
         call()

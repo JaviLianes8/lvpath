@@ -23,7 +23,11 @@ The flattened form is checked against NI's published example and against the
   `<vilib>`-style first component, a first Windows component that is not a drive letter
   (0.3.1 produced `usr:\lib`), the absolute path with no component on Windows, literal
   `.` and `..` components, and components holding `/` (or `\` or `:` on Windows).
-- `to_flat_path` refuses a POSIX path starting with `//` (0.3.1 dropped one slash).
+- `to_flat_path` refuses a POSIX path starting with `//` (0.3.1 dropped one slash) and a
+  rooted Windows path without a drive such as `\usr\x` (0.3.1 wrote it as a relative path
+  whose first component was a backslash).
+- Several error messages are reworded; the exception types are unchanged except where
+  listed here.
 - A `PurePath` passed to `to_lv_path` or `to_flat_path` with `platform=None` keeps its own
   flavor, as `to_portable_path` already did; an anchored path is no longer carried to the
   other flavor, and a component with a colon may not cross to Windows (raises

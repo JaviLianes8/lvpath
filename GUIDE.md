@@ -208,7 +208,8 @@ The public names and signatures are the same. Behaviour that changed:
 - `from_flat_path` now refuses what it used to misread: symbolic `<vilib>` prefixes,
   a first Windows component that is not a drive letter, literal `.` and `..`
   components and components holding separators. `to_flat_path` refuses POSIX paths
-  starting with `//`.
+  starting with `//` and rooted Windows paths without a drive (`\usr\x`, which 0.3
+  wrote with a backslash as its first component).
 - A `PurePath` passed with `platform=None` keeps its own flavor in `to_lv_path` and
   `to_flat_path` (0.3 re-read it with the running system's flavor), and an anchored
   path is no longer carried to the other flavor.
