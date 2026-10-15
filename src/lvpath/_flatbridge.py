@@ -16,7 +16,8 @@ import string
 from pathlib import PurePath, PurePosixPath, PureWindowsPath
 
 from ._coerce import as_pure
-from ._flatten import FlatPath, FlatPathError, FlatPathType, parse_flat_path
+from ._fields import FlatPathError
+from ._flatten import FlatPath, FlatPathType, parse_flat_path
 from ._platform import Platform, flavor, resolve
 from ._text import quote
 

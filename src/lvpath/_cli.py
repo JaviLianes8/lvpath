@@ -132,10 +132,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         sys.stdout.write(result + "\n")
         sys.stdout.flush()
-    except BrokenPipeError:
-        # The reader went away; point stdout at nothing so interpreter exit stays quiet.
-        devnull = os.open(os.devnull, os.O_WRONLY)
-        os.dup2(devnull, sys.stdout.fileno())
+    except OSError:
+        # The reader went away (Windows reports EINVAL, POSIX EPIPE); point stdout at
+        # nothing so the flush at interpreter exit stays quiet.
+        with contextlib.suppress(OSError, ValueError):
+            os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
         return 1
     return 0
 

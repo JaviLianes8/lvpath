@@ -14,21 +14,15 @@ meaning to a type code that has not been established.
 
 from __future__ import annotations
 
-import operator
 import struct
 from collections.abc import Iterable
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import SupportsIndex, cast
 
-from ._text import quote, type_name
+from ._fields import FlatPathError, as_bytes, check_components, check_type
 
 SIGNATURE: bytes = b"PTH0"
-"""The four ASCII bytes that open every flattened LabVIEW path.
-
->>> SIGNATURE
-b'PTH0'
-"""
+"""The four ASCII bytes that open every flattened LabVIEW path."""
 
 _HEADER = struct.Struct(">4sIHH")  # signature, length, path type, count
 
@@ -47,20 +41,6 @@ class FlatPathType(IntEnum):
 
     ABSOLUTE = 0
     RELATIVE = 1
-
-
-class FlatPathError(ValueError):
-    """Raised when flattened path bytes or components are malformed or cannot be interpreted.
-
-    The message names the problem: a wrong signature, a truncated stream, a
-    declared length that disagrees with the body, a component that overruns the
-    buffer or is not ASCII, or a path with no ``PurePath`` meaning.
-
-    >>> parse_flat_path(b"PTH1" + bytes(8))
-    Traceback (most recent call last):
-    ...
-    lvpath._flatten.FlatPathError: bad signature: expected b'PTH0', got b'PTH1'
-    """
 
 
 @dataclass(frozen=True)
@@ -82,8 +62,8 @@ class FlatPath:
     components: tuple[str, ...]
 
     def __post_init__(self) -> None:
-        object.__setattr__(self, "path_type", _check_type(self.path_type))
-        object.__setattr__(self, "components", _check_components(self.components))
+        object.__setattr__(self, "path_type", check_type(self.path_type))
+        object.__setattr__(self, "components", check_components(self.components))
 
     @property
     def is_absolute(self) -> bool:
@@ -122,7 +102,7 @@ class FlatPath:
         >>> FlatPath.from_bytes(bytes.fromhex("505448300000000b0000000201430466696c65"))
         FlatPath(path_type=0, components=('C', 'file'))
         """
-        raw = _as_bytes(data)
+        raw = as_bytes(data)
         if len(raw) < _HEADER.size:
             raise FlatPathError(
                 f"flattened path is too short: {len(raw)} bytes, need at least {_HEADER.size}"
@@ -155,42 +135,6 @@ def parse_flat_path(data: bytes | bytearray | memoryview) -> FlatPath:
     FlatPath(path_type=2, components=())
     """
     return FlatPath.from_bytes(data)
-
-
-def _as_bytes(data: object) -> bytes:
-    if isinstance(data, (bytes, bytearray)):
-        return bytes(data)
-    if isinstance(data, memoryview):
-        return data.tobytes()
-    raise TypeError(f"flattened path data must be bytes-like, not {type_name(data)}")
-
-
-def _check_type(path_type: object) -> int:
-    if isinstance(path_type, bool) or not hasattr(type(path_type), "__index__"):
-        raise TypeError(f"path type must be an integer, not {type_name(path_type)}")
-    value = operator.index(cast("SupportsIndex", path_type))
-    if not 0 <= value <= 0xFFFF:
-        raise FlatPathError(f"path type out of u16 range: {quote(str(value))}")
-    return int(value)
-
-
-def _check_components(components: object) -> tuple[str, ...]:
-    if isinstance(components, (str, bytes, bytearray, memoryview)):
-        raise TypeError(f"components must be an iterable of str, not {type_name(components)}")
-    if not isinstance(components, Iterable):
-        raise TypeError(f"components must be an iterable of str, not {type_name(components)}")
-    parts: list[str] = []
-    for component in components:
-        if not isinstance(component, str):
-            raise TypeError(f"each component must be a str, not {type_name(component)}")
-        if len(parts) == 0xFFFF:
-            raise FlatPathError("too many components to flatten: more than 65535")
-        if not str.isascii(component):
-            raise FlatPathError(f"component is not ASCII: {quote(component)}")
-        if len(component) > 0xFF:
-            raise FlatPathError(f"component too long to flatten: {len(component)} bytes")
-        parts.append(str.__str__(component))
-    return tuple(parts)
 
 
 def _read_components(body: bytes, count: int) -> tuple[list[str], int]:

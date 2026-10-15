@@ -37,7 +37,16 @@ class PortablePathError(ValueError):
 
     The message names the value and why it cannot be converted, for example a
     POSIX absolute path read as a Windows path or a drive-relative ``C:file``.
+
+    >>> from_portable_path("/home/lvuser", platform="windows")
+    Traceback (most recent call last):
+    ...
+    lvpath.PortablePathError: '/home/lvuser' is a POSIX absolute path with no Windows equivalent
+    >>> issubclass(PortablePathError, ValueError)
+    True
     """
+
+    __module__ = "lvpath"
 
 
 def from_portable_path(text: str, *, platform: Platform | str | None = None) -> PurePath:
