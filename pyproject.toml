@@ -58,7 +58,7 @@ only-include = [
     "LICENSE",
     "pyproject.toml",
 ]
-exclude = ["**/__pycache__", "**/*.pyc", "tests/fixtures/sources/ni-*"]
+exclude = ["**/__pycache__", "**/*.pyc", "tests/fixtures/sources/ni-*", ".gitignore"]
 
 [tool.ruff]
 line-length = 100
