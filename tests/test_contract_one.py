@@ -147,3 +147,10 @@ def test_messages_quote_at_most_40_characters_of_a_value() -> None:
         to_portable_path(huge, platform="windows")
     assert len(str(raised.value)) < 200
     assert "100002 characters" in str(raised.value)
+
+
+def test_a_component_overrunning_by_one_byte_is_named_as_an_overrun() -> None:
+    data = bytearray(build_flat_path(1, ["abc"]))
+    data[12] = 4  # the length byte now claims one byte more than the buffer holds
+    with pytest.raises(FlatPathError, match="component 0 of 4 bytes overruns the buffer"):
+        parse_flat_path(bytes(data))
