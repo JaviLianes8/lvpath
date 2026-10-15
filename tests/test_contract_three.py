@@ -67,6 +67,25 @@ def test_a_lone_surrogate_is_written_back_as_its_byte() -> None:
     assert (result.stdout.rstrip(b"\r\n"), result.stderr) == (b"a\xffb", b"")
 
 
+@pytest.mark.parametrize("surrogate", ["\ud800", "\udbff", "\udc00", "\udfff"])
+def test_a_surrogate_utf8_cannot_write_is_refused_in_one_line(surrogate: str) -> None:
+    out, err = sys.stdout, sys.stderr
+    target, errors = io.BytesIO(), io.BytesIO()
+    stdout = io.TextIOWrapper(target, encoding="utf-8")
+    stderr = io.TextIOWrapper(errors, encoding="utf-8", errors="backslashreplace")
+    try:
+        sys.stdout, sys.stderr = stdout, stderr
+        status = main(["to-native", "--platform", "posix", "/x" + surrogate])
+    finally:
+        sys.stdout, sys.stderr = out, err
+        stdout.detach()
+        stderr.flush()
+        stderr.detach()
+    assert (status, target.getvalue()) == (1, b"")
+    assert len(errors.getvalue().splitlines()) == 1
+    assert b"lone surrogate" in errors.getvalue()
+
+
 def test_missing_streams_never_raise_or_cross_over(capsys: pytest.CaptureFixture[str]) -> None:
     out, err = sys.stdout, sys.stderr
     try:

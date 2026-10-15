@@ -137,6 +137,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         sys.stdout.write(result + "\n")
         sys.stdout.flush()
+    except UnicodeEncodeError as error:
+        # A lone surrogate from Windows argv: UTF-8 has no bytes for it.
+        bad = error.object[error.start : error.start + 1]
+        _say(f"lvpath: the result holds {bad!r}, a lone surrogate UTF-8 cannot write")
+        return 1
     except OSError:
         # The reader went away (Windows reports EINVAL, POSIX EPIPE); point stdout at
         # nothing so the flush at interpreter exit stays quiet.

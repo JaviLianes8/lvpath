@@ -75,7 +75,9 @@ The flattened form is checked against NI's published example and against the
   quietly; invalid hex no longer echoes the parser's detail; `lvpath encode ''` prints the
   not-a-path bytes and `lvpath decode` of them is refused. A POSIX argument that is not
   valid UTF-8 is written back as its original bytes (0.3.1 stopped with a
-  `UnicodeEncodeError` traceback), and a missing standard stream no longer raises.
+  `UnicodeEncodeError` traceback); a lone surrogate UTF-8 cannot write at all (possible
+  in Windows arguments) is refused in one line with status 1; a missing standard stream
+  no longer raises.
 - A `str` subclass is read through its plain text: an overridden `__eq__` or `__len__`
   no longer changes a result or slips past the component limits.
 
