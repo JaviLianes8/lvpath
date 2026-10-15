@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "lvpath"
-version = "0.3.1"
+version = "1.0.0"
 description = "Convert LabVIEW path strings, the portable /C/DIR form of config and project files, and the flattened PTH0 form to and from native paths."
 readme = "README.md"
 requires-python = ">=3.10"

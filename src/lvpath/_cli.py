@@ -3,16 +3,20 @@
 ``lvpath to-native`` turns LabVIEW's portable path string (``/C/DIR1/DIR2``) into
 a native path; ``lvpath to-labview`` does the reverse. ``lvpath decode`` turns the
 hex of a flattened ``PTH0`` byte string into a native path; ``lvpath encode``
-turns a native path into that hex. Errors are written to standard error and the
-process exits with status ``1``.
+turns a native path into that hex. A value lvpath refuses exits with status
+``1`` and a usage mistake with status ``2``, each with one short line on
+standard error. ``python -m lvpath`` runs the same command.
 """
 
 from __future__ import annotations
 
 import argparse
+import contextlib
 import io
+import os
 import sys
 from collections.abc import Sequence
+from typing import NoReturn
 
 from . import __version__
 from ._flatbridge import from_flat_path, to_flat_path
@@ -39,9 +43,50 @@ examples:
   lvpath encode --platform posix /usr/local/bin
 """
 
+_COMMANDS = [
+    (
+        "to-native",
+        "text",
+        "a LabVIEW portable path string to a native path",
+        "Convert a LabVIEW portable path string (/C/DIR1/DIR2, //server/share, a/b) "
+        "into a native path. An empty string is <Not A Path> and is an error.",
+    ),
+    (
+        "to-labview",
+        "path",
+        "a native path to a LabVIEW portable path string",
+        "Convert a native path into the portable path string LabVIEW writes into "
+        "configuration and project files. An empty path prints an empty line, "
+        "LabVIEW's <Not A Path>.",
+    ),
+    (
+        "decode",
+        "hex",
+        "hex of flattened PTH0 bytes to a native path",
+        "Decode the hex of a flattened PTH0 byte string into a native path.",
+    ),
+    (
+        "encode",
+        "path",
+        "a native path to flattened PTH0 hex",
+        "Encode a native path into the hex of its flattened PTH0 byte string.",
+    ),
+]
+
+_MESSAGE_LIMIT = 200
+
+
+class _Parser(argparse.ArgumentParser):
+    def error(self, message: str) -> NoReturn:
+        # argparse echoes the offending argument; keep the line short whatever it was.
+        with contextlib.suppress(OSError, ValueError):
+            self.print_usage(sys.stderr)
+        _say(f"{self.prog}: error: {message}")
+        raise SystemExit(2)
+
 
 def _build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
+    parser = _Parser(
         prog="lvpath",
         description=(
             "Convert LabVIEW's portable path strings to and from native paths, and decode "
@@ -51,64 +96,46 @@ def _build_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("--version", action="version", version=f"lvpath {__version__}")
-    subparsers = parser.add_subparsers(dest="command", required=True)
-    commands = [
-        (
-            "to-native",
-            "text",
-            "a LabVIEW portable path string to a native path",
-            "Convert a LabVIEW portable path string (/C/DIR1/DIR2, //server/share, a/b) "
-            "into a native path. An empty string is <Not A Path> and is an error.",
-        ),
-        (
-            "to-labview",
-            "path",
-            "a native path to a LabVIEW portable path string",
-            "Convert a native path into the portable path string LabVIEW writes into "
-            "configuration and project files. An empty path prints an empty line, "
-            "LabVIEW's <Not A Path>.",
-        ),
-        (
-            "decode",
-            "hex",
-            "hex of flattened PTH0 bytes to a native path",
-            "Decode the hex of a flattened PTH0 byte string into a native path.",
-        ),
-        (
-            "encode",
-            "path",
-            "a native path to flattened PTH0 hex",
-            "Encode a native path into the hex of its flattened PTH0 byte string.",
-        ),
-    ]
-    for name, argument, short, long in commands:
+    subparsers = parser.add_subparsers(dest="command", required=True, parser_class=_Parser)
+    for name, argument, short, long in _COMMANDS:
         sub = subparsers.add_parser(name, help=short, description=long)
         sub.add_argument(argument, help=f"the {argument} to convert")
-        _add_platform(sub)
+        sub.add_argument(
+            "--platform",
+            choices=["windows", "posix"],
+            default=None,
+            help="native path flavor to use (default: the current operating system)",
+        )
     return parser
 
 
-def _add_platform(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument(
-        "--platform",
-        choices=["windows", "posix"],
-        default=None,
-        help="native path flavor to use (default: the current operating system)",
-    )
-
-
 def main(argv: Sequence[str] | None = None) -> int:
-    """Run the command line interface. Returns the process exit status."""
-    args = _build_parser().parse_args(argv)
-    # Paths may hold any Unicode character; a pipe on Windows defaults to a
-    # legacy code page, so write UTF-8 to standard output and standard error.
+    """Run the command line interface and return the process exit status.
+
+    >>> main(["to-labview", "--platform", "windows", "C:/DIR1/DIR2"])
+    /C/DIR1/DIR2
+    0
+    """
     for stream in (sys.stdout, sys.stderr):
+        # Paths may hold any character; a Windows pipe defaults to a legacy code page.
         if isinstance(stream, io.TextIOWrapper):
             stream.reconfigure(encoding="utf-8")
     try:
-        print(_run(args.command, args, args.platform))
+        args = _build_parser().parse_args(argv)
+    except SystemExit as stop:
+        return stop.code if isinstance(stop.code, int) else 2
+    try:
+        result = _run(args.command, args, args.platform)
     except ValueError as error:
-        print(f"lvpath: {error}", file=sys.stderr)
+        _say(f"lvpath: {error}")
+        return 1
+    try:
+        sys.stdout.write(result + "\n")
+        sys.stdout.flush()
+    except BrokenPipeError:
+        # The reader went away; point stdout at nothing so interpreter exit stays quiet.
+        devnull = os.open(os.devnull, os.O_WRONLY)
+        os.dup2(devnull, sys.stdout.fileno())
         return 1
     return 0
 
@@ -126,9 +153,12 @@ def _run(command: str, args: argparse.Namespace, platform: str | None) -> str:
 def _hex_bytes(raw_hex: str) -> bytes:
     try:
         return bytes.fromhex(raw_hex.replace(" ", ""))
-    except ValueError as error:
-        raise ValueError(f"not valid hex: {error}") from error
+    except ValueError:
+        raise ValueError(f"not valid hex ({len(raw_hex)} characters given)") from None
 
 
-if __name__ == "__main__":
-    sys.exit(main())
+def _say(line: str) -> None:
+    if len(line) > _MESSAGE_LIMIT:
+        line = line[: _MESSAGE_LIMIT - 3] + "..."
+    with contextlib.suppress(OSError, ValueError):
+        print(line, file=sys.stderr)

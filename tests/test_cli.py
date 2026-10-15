@@ -72,9 +72,7 @@ def test_decode_reports_bad_hex(capsys: pytest.CaptureFixture[str]) -> None:
 
 
 def test_a_missing_command_is_a_usage_error(capsys: pytest.CaptureFixture[str]) -> None:
-    with pytest.raises(SystemExit) as raised:
-        main([])
-    assert raised.value.code == 2
+    assert main([]) == 2
     assert "usage: lvpath" in capsys.readouterr().err
 
 
