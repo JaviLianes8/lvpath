@@ -29,11 +29,14 @@ class FlatPathError(ValueError):
 
 
 def as_bytes(data: object) -> bytes:
-    if isinstance(data, (bytes, bytearray)):
-        return bytes(data)
-    if isinstance(data, memoryview):
-        return data.tobytes()
-    raise TypeError(f"flattened path data must be bytes-like, not {type_name(data)}")
+    if isinstance(data, str):
+        raise TypeError("flattened path data must be bytes-like, not str")
+    try:
+        view = memoryview(data)  # type: ignore[arg-type]
+    except TypeError:
+        raise TypeError(f"flattened path data must be bytes-like, not {type_name(data)}") from None
+    with view:
+        return view.tobytes()
 
 
 def check_type(path_type: object) -> int:
@@ -41,7 +44,10 @@ def check_type(path_type: object) -> int:
         raise TypeError(f"path type must be an integer, not {type_name(path_type)}")
     value = operator.index(cast("SupportsIndex", path_type))
     if not 0 <= value <= 0xFFFF:
-        raise FlatPathError(f"path type out of u16 range: {quote(str(value))}")
+        shown = (
+            str(value) if -(10**9) < value < 10**9 else f"an integer of {value.bit_length()} bits"
+        )
+        raise FlatPathError(f"path type out of u16 range: {shown}")
     return int(value)
 
 

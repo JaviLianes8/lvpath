@@ -18,33 +18,44 @@ The flattened form is checked against NI's published example and against the
 - An empty flattened component now decodes as `..` and `..` encodes as an empty
   component, which is how LabVIEW 2026 stores relative links (21,765 links in its own
   files resolve that way). 0.3.1 dropped the empty components, so
-  `('', '', 'NI_MDF.lvlib')` decoded as `NI_MDF.lvlib`.
-- `from_flat_path` refuses with `FlatPathError` what it used to misread: a symbolic
-  `<vilib>`-style first component, a first Windows component that is not a drive letter
-  (0.3.1 produced `usr:\lib`), the absolute path with no component on Windows, literal
-  `.` and `..` components, and components holding `/` (or `\` or `:` on Windows).
+  `('', '', 'NI_MDF.lvlib')` decoded as `NI_MDF.lvlib`, and wrote `..` as two dots.
+- `from_flat_path` refuses with `FlatPathError` what 0.3.1 misread: a symbolic
+  `<vilib>`-style first component of an absolute path, a first Windows component that is
+  not one drive letter (0.3.1 produced `usr:\lib`), literal `.` and `..` components, and
+  components holding `/` (or `\` or `:` on Windows).
 - `to_flat_path` refuses a POSIX path starting with `//` (0.3.1 dropped one slash) and a
   rooted Windows path without a drive such as `\usr\x` (0.3.1 wrote it as a relative path
   whose first component was a backslash).
-- Several error messages are reworded; the exception types are unchanged except where
-  listed here.
-- A `PurePath` passed to `to_lv_path` or `to_flat_path` with `platform=None` keeps its own
-  flavor, as `to_portable_path` already did; an anchored path is no longer carried to the
-  other flavor, and a component with a colon may not cross to Windows (raises
-  `PortablePathError` or `FlatPathError`).
-- `FlatPath` checks its fields when built: a non-integer or `bool` path type and a non-`str`
-  component raise `TypeError`, a non-ASCII, over-long or 65,536th component
-  `FlatPathError`. Components given as any iterable are stored as a tuple.
+- A `PurePath` given to `to_lv_path` or `to_flat_path` with `platform=None` keeps its own
+  flavor, as `to_portable_path` already did (0.3.1 re-read it with the running system's
+  flavor). When `platform` names the other flavor, an anchored path, and on the way to
+  Windows a component holding a backslash or a colon, raise `PortablePathError` or
+  `FlatPathError` (0.3.1 produced a different path).
+- `platform` is checked before anything else in every function: an unknown name raises
+  `ValueError` and a value that is not a `str`, `Platform` or `None` raises `TypeError`
+  (0.3.1 raised `AttributeError`) even when the path is empty. In 0.3.1,
+  `path_kind("", platform="bogus")` returned `NOT_A_PATH`, `to_lv_path` and
+  `to_portable_path` returned `""`, and `to_os_path` and `from_portable_path` raised
+  `NotAPathError`.
+- `FlatPath` checks its fields when built: a `bool` or non-integer path type and a
+  non-`str` component raise `TypeError`; a non-ASCII or over-long component and a
+  65,536th component raise `FlatPathError` (0.3.1 raised them later, in `to_bytes`). The
+  path type is stored as a plain `int` (an `IntEnum` member was kept as given) and the
+  components as a tuple. `build_flat_path` refuses a `str` as its components with
+  `TypeError` (0.3.1 split it into one-character components).
 - Non-ASCII flattened bytes raise `FlatPathError` instead of `UnicodeDecodeError`.
-  `parse_flat_path`, `FlatPath.from_bytes` and `from_flat_path` accept `bytearray` and
-  `memoryview` and raise `TypeError` for anything else.
-- A `platform` that is not a `str`, `Platform` or `None` raises `TypeError` instead of
-  `AttributeError`. Non-`str` text arguments raise `TypeError` with a short message.
-- Error messages quote at most 40 characters of a value; the exception classes report
-  their module as `lvpath`.
-- Command line: usage mistakes print the usage and one bounded line and exit 2, refused
-  values one bounded line and exit 1, a closed output pipe exits 1 quietly; invalid hex no
-  longer echoes the parser's detail.
+  `parse_flat_path`, `FlatPath.from_bytes` and `from_flat_path` read any object with the
+  buffer protocol (`bytes`, `bytearray`, `memoryview`, `array`, `mmap`), as 0.3.1 did at
+  run time, and are now typed for `bytes | bytearray | memoryview`; a `str` raises
+  `TypeError` with a short message.
+- Error messages quote at most 40 characters of a value and several are reworded; the
+  exception types are unchanged except where listed here. The public classes
+  (`FlatPath`, `FlatPathType`, `PathKind`, `Platform` and the three exceptions) report
+  their module as `lvpath`, so pickles name `lvpath.<class>`; pickles made by 0.3.1 still
+  load.
+- Command line: a usage mistake still exits 2, now with lines of at most 200 characters;
+  a refused value prints one bounded line and exits 1; a closed output pipe exits 1
+  quietly; invalid hex no longer echoes the parser's detail.
 
 ### Added
 

@@ -39,6 +39,8 @@ class FlatPathType(IntEnum):
     (<FlatPathType.ABSOLUTE: 0>, <FlatPathType.RELATIVE: 1>)
     """
 
+    __module__ = "lvpath"
+
     ABSOLUTE = 0
     RELATIVE = 1
 
@@ -49,14 +51,16 @@ class FlatPath:
 
     ``path_type`` is the u16 read from the stream, so a path with an
     un-interpreted type code still round-trips through :meth:`to_bytes`.
-    ``components`` are the Pascal-string parts in order, each ASCII and at most
-    255 characters; any iterable of ``str`` is stored as a tuple. Values outside
+    ``components`` is a tuple of the Pascal-string parts in order, each ASCII and
+    at most 255 characters. Values outside
     those limits raise :class:`FlatPathError`, values of the wrong type
     ``TypeError``.
 
     >>> FlatPath(path_type=1, components=("", "sub.vi"))
     FlatPath(path_type=1, components=('', 'sub.vi'))
     """
+
+    __module__ = "lvpath"
 
     path_type: int
     components: tuple[str, ...]
@@ -125,7 +129,7 @@ def build_flat_path(path_type: int, components: Iterable[str]) -> bytes:
     >>> build_flat_path(1, ["", "x.vi"]).hex()
     '505448300000000a000100020004782e7669'
     """
-    return FlatPath(path_type=path_type, components=tuple(components)).to_bytes()
+    return FlatPath(path_type=path_type, components=components).to_bytes()  # type: ignore[arg-type]
 
 
 def parse_flat_path(data: bytes | bytearray | memoryview) -> FlatPath:

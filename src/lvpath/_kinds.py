@@ -15,6 +15,8 @@ class PathKind(Enum):
     <PathKind.NOT_A_PATH: 'not_a_path'>
     """
 
+    __module__ = "lvpath"
+
     ABSOLUTE = "absolute"
     RELATIVE = "relative"
     NOT_A_PATH = "not_a_path"

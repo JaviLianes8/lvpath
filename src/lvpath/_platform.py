@@ -21,6 +21,8 @@ class Platform(Enum):
     ['windows', 'posix']
     """
 
+    __module__ = "lvpath"
+
     WINDOWS = "windows"
     POSIX = "posix"
 

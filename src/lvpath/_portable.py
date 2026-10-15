@@ -67,12 +67,15 @@ def from_portable_path(text: str, *, platform: Platform | str | None = None) -> 
     >>> from_portable_path("/home/lvuser/natinst/bin", platform="posix")
     PurePosixPath('/home/lvuser/natinst/bin')
     """
+    target = resolve(platform)
+    if isinstance(text, PurePath):
+        text = str(text)
     if not isinstance(text, str):
         raise TypeError(f"a portable path string must be a str, not {type_name(text)}")
     text = str.__str__(text)
     if text == "":
         raise NotAPathError("LabVIEW not-a-path has no OS path")
-    if resolve(platform) is Platform.POSIX:
+    if target is Platform.POSIX:
         return PurePosixPath(text)
     match = _PORTABLE_DRIVE.fullmatch(text)
     if match:
@@ -112,6 +115,7 @@ def to_portable_path(
     >>> to_portable_path(None)
     ''
     """
+    resolve(platform)
     if os_path is None or (isinstance(os_path, str) and os_path == ""):
         return ""
     original = str.__str__(os_path) if isinstance(os_path, str) else str(os_path)
