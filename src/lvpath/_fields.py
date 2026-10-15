@@ -62,9 +62,10 @@ def check_components(components: object) -> tuple[str, ...]:
             raise TypeError(f"each component must be a str, not {type_name(component)}")
         if len(parts) == 0xFFFF:
             raise FlatPathError("too many components to flatten: more than 65535")
-        if not str.isascii(component):
-            raise FlatPathError(f"component is not ASCII: {quote(component)}")
-        if len(component) > 0xFF:
-            raise FlatPathError(f"component too long to flatten: {len(component)} bytes")
-        parts.append(str.__str__(component))
+        text = str.__str__(component)
+        if not text.isascii():
+            raise FlatPathError(f"component is not ASCII: {quote(text)}")
+        if len(text) > 0xFF:
+            raise FlatPathError(f"component too long to flatten: {len(text)} bytes")
+        parts.append(text)
     return tuple(parts)

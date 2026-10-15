@@ -70,7 +70,7 @@ def to_lv_path(os_path: PurePath | str | None, *, platform: Platform | str | Non
     ''
     """
     resolve(platform)
-    if os_path is None or (isinstance(os_path, str) and os_path == ""):
+    if os_path is None or (isinstance(os_path, str) and str.__len__(os_path) == 0):
         return ""
     return str(as_pure(os_path, platform, PortablePathError))
 
@@ -81,6 +81,6 @@ def _parse(lv_path: object, platform: Platform | str | None) -> PurePath | None:
         return as_pure(lv_path, platform, PortablePathError)
     if not isinstance(lv_path, str):
         raise TypeError(f"a LabVIEW path must be a str or a PurePath, not {type_name(lv_path)}")
-    if lv_path == "":
+    if str.__len__(lv_path) == 0:
         return None
     return target(str.__str__(lv_path))

@@ -126,7 +126,7 @@ def to_portable_path(
     ''
     """
     resolve(platform)
-    if os_path is None or (isinstance(os_path, str) and os_path == ""):
+    if os_path is None or (isinstance(os_path, str) and str.__len__(os_path) == 0):
         return ""
     original = str.__str__(os_path) if isinstance(os_path, str) else str(os_path)
     pure = as_pure(os_path, platform, PortablePathError)

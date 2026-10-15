@@ -79,8 +79,9 @@ _MESSAGE_LIMIT = 200
 class _Parser(argparse.ArgumentParser):
     def error(self, message: str) -> NoReturn:
         # argparse echoes the offending argument; keep the line short whatever it was.
-        with contextlib.suppress(OSError, ValueError):
-            self.print_usage(sys.stderr)
+        if sys.stderr is not None:
+            with contextlib.suppress(OSError, ValueError):
+                self.print_usage(sys.stderr)
         _say(f"{self.prog}: error: {message}")
         raise SystemExit(2)
 
@@ -118,8 +119,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     """
     for stream in (sys.stdout, sys.stderr):
         # Paths may hold any character; a Windows pipe defaults to a legacy code page.
+        # Undecodable POSIX arguments arrive as lone surrogates; write their bytes back.
         if isinstance(stream, io.TextIOWrapper):
-            stream.reconfigure(encoding="utf-8")
+            with contextlib.suppress(OSError, ValueError):
+                stream.reconfigure(encoding="utf-8", errors="surrogateescape")
     try:
         args = _build_parser().parse_args(argv)
     except SystemExit as stop:
@@ -128,6 +131,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         result = _run(args.command, args, args.platform)
     except ValueError as error:
         _say(f"lvpath: {error}")
+        return 1
+    if sys.stdout is None:
         return 1
     try:
         sys.stdout.write(result + "\n")
@@ -161,5 +166,7 @@ def _hex_bytes(raw_hex: str) -> bytes:
 def _say(line: str) -> None:
     if len(line) > _MESSAGE_LIMIT:
         line = line[: _MESSAGE_LIMIT - 3] + "..."
+    if sys.stderr is None:
+        return
     with contextlib.suppress(OSError, ValueError):
         print(line, file=sys.stderr)

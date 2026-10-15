@@ -20,6 +20,7 @@ from dataclasses import dataclass
 from enum import IntEnum
 
 from ._fields import FlatPathError, as_bytes, check_components, check_type
+from ._text import type_name
 
 SIGNATURE: bytes = b"PTH0"
 """The four ASCII bytes that open every flattened LabVIEW path."""
@@ -76,6 +77,8 @@ class FlatPath:
     def __setstate__(self, state: dict[str, object]) -> None:
         # Unpickling skips __post_init__; check the fields here too, so a pickle
         # written by 0.3.1 (a list of components, an enum type) loads normalised.
+        if not isinstance(state, dict):
+            raise TypeError(f"FlatPath state must be a dict, not {type_name(state)}")
         object.__setattr__(self, "path_type", check_type(state.get("path_type")))
         object.__setattr__(self, "components", check_components(state.get("components")))
 

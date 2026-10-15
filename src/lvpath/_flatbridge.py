@@ -49,7 +49,7 @@ def to_flat_path(
     FlatPath(path_type=1, components=('', 'sub.vi'))
     """
     resolve(platform)
-    if os_path is None or (isinstance(os_path, str) and os_path == ""):
+    if os_path is None or (isinstance(os_path, str) and str.__len__(os_path) == 0):
         return FlatPath(int(FlatPathType.NOT_A_PATH), ()).to_bytes()
     pure = as_pure(os_path, platform, FlatPathError)
     parts = [("" if part == ".." else part) for part in pure.parts]
