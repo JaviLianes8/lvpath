@@ -1,6 +1,8 @@
 # Build and upload to PyPI. Run scripts/check.ps1 first.
 # The version must not already exist on PyPI; the token is read from a secret store, never git.
 $ErrorActionPreference = "Stop"
+# Work from the repository root whatever the caller's current folder is.
+Set-Location (Split-Path -Parent $PSScriptRoot)
 
 # Refuse to upload a version PyPI already has. Works on Windows PowerShell 5.1 and pwsh 7.
 $version = (Select-String -Path pyproject.toml -Pattern '^version = "(.+)"').Matches[0].Groups[1].Value
