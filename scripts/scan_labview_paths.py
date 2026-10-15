@@ -1,9 +1,11 @@
 """Collect flattened paths that LabVIEW wrote into the files of a local install.
 
 LabVIEW saves path constants, default values and the links between VIs inside its
-own files as ``PTH0`` records. This script walks an install, finds every complete
-record and writes ``tests/fixtures/labview2026_flat.json``: a summary of the whole
-scan plus a small set of chosen records with the file and offset each came from.
+own files as ``PTH0`` records. This script walks an install, skips files over 50 MB
+(the executable, a browser library and the object cache, whose records include split
+fragments), finds every complete record and writes
+``tests/fixtures/labview2026_flat.json``: a summary of the whole scan plus a small
+set of chosen records with the file and offset each came from.
 Only the record bytes are kept; nothing else from the NI files is copied.
 
     python scripts/scan_labview_paths.py "C:/Program Files/National Instruments/LabVIEW 2026"

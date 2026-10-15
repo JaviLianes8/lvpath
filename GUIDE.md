@@ -124,12 +124,14 @@ lvpath.FlatPathError: symbolic path prefix '<vilib>' has no PurePath meaning
 
 ```
 
-The path type codes are those of LabVIEW's `cintools/extcode.h` (`FlatPathType`), and
+The path type codes are those LabVIEW's `cintools/extcode.h` lists in order (`fAbsPath`,
+`fRelPath`, `fNotAPath`, `fUNCPath`), exposed as `FlatPathType`, and
 `from_flat_path` and `to_flat_path` interpret three of them:
 
 - `0`, absolute (`ABSOLUTE`). On Windows the first component is the drive letter
   without its colon; on POSIX the components follow the root, and no component at all
-  is `/`. That empty absolute path has no Windows `PurePath`.
+  is `/`. That empty absolute path (LabVIEW's empty path, common in VI files) has no
+  Windows `PurePath` and raises `FlatPathError` there.
 - `1`, relative (`RELATIVE`). No component at all is `.`.
 - In both, an empty component means one level up, `..` in text.
 - `2`, `<Not A Path>` (`NOT_A_PATH`), with no component. `to_flat_path("")` and
@@ -150,7 +152,10 @@ most 65535 of them.
   spell `file` in lower case. `tests/test_sources_truth.py` reads the example from a
   copy fetched by `scripts/fetch_sources.py` (not committed; `MANIFEST.json` keeps the
   URL, date and SHA-256).
-- `scripts/scan_labview_paths.py` walked a LabVIEW 2026 install on 2026-10-15 and found
+- `scripts/scan_labview_paths.py` walked a LabVIEW 2026 install on 2026-10-15, skipping
+  files over 50 MB (`LabVIEW.exe`, `resource/libcef.dll` and the object cache
+  `VIObjCache/26.0.0r0/objFileDB.vidb`, whose records include split, corrupted
+  fragments), and found
   321,686 records of type `0`, 27,879 of type `1` and one of type `2`. Of the 24,024
   relative links that start with empty components, 21,765 name an existing file when
   each empty component is read as one level up from the file holding the link; no

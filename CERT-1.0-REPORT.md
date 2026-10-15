@@ -53,11 +53,13 @@ Progress:
   reported a server error and the COM class never registered. Ground truth was taken from
   files LabVIEW itself wrote instead.
 - `scripts/scan_labview_paths.py` walked the install and found every complete `PTH0`
-  record LabVIEW saved into its VIs, controls, libraries and resource files: 321,686 of
+  record LabVIEW saved into its VIs, controls, libraries and resource files, files over
+  50 MB skipped (`LabVIEW.exe`, `resource/libcef.dll`, the object cache
+  `VIObjCache/26.0.0r0/objFileDB.vidb` whose records include corrupted fragments): 321,686 of
   path type 0, 27,879 of type 1, one of type 2 (no component, in `resource/labview.rsc`).
   24,024 relative links start with empty components; 21,765 of them name an existing file
   when each empty component is read as one level up from the file holding the link. No
-  record holds a literal `.` or `..`, and no component is non-ASCII. Absolute records start
+  record holds a literal `.` or `..`, and no component in the scanned files is non-ASCII. Absolute records start
   with a drive letter (`C`, `c`, `w`), a POSIX name (`usr`) or a symbolic prefix
   (`<vilib>`, `<resource>` and others); 2,534 absolute records have no component.
 - `tests/fixtures/labview2026_flat.json` keeps the scan summary and eleven chosen records
@@ -165,6 +167,7 @@ three survivors and M47 was rewritten, and the rerun killed all four.
 | --- | --- | --- | --- | --- |
 | a. API and docs | 1 | a6126e0 | FAIL (2 medium, 9 low, info) | about 80 calls compared with PyPI 0.3.1, every example and transcript, strict consumer, pickles. Unlisted: `PurePath` input refused by `to_os_path`, `path_kind`, `from_portable_path`; `platform` checked first only in some functions; backslash crossing rule; `mmap`/`array` refused; `build_flat_path` splitting a `str`; `IntEnum` stored as `int`. Also CHANGELOG items 0.3.1 already did, `FlatPath` typing against its docstring, private `__module__` on public classes, quoted number in a message, GUIDE upgrade list shorter than CHANGELOG. Fixed in cf09a0c (path objects read again, platform first everywhere, any buffer read, one shared change list, `tests/test_contract_two.py`) |
 | a. API and docs | 2 (new reviewer) | cf09a0c | FAIL (5 medium, 2 low, info) | every example and transcript, strict consumer, pickles both ways, about 100 calls against 0.3.1; the round 1 fixes confirmed. New: `from_flat_path` read the bytes before checking `platform`; text readers re-flavored a `PurePath` (different results on 3.10/3.11); the buffer claim of parity with 0.3.1 was wrong; five differences missing from the upgrade list; the 65,536-component remark wrong; LabVIEW's own `cintools/extcode.h` numbers the path types (2 not-a-path, 3 UNC) while `to_flat_path("")` wrote an empty relative path; a 0.3.1 pickle loaded an unnormalised `FlatPath`. Fixed in the next commit: not-a-path is type 2 both ways (`NotAPathError` on decode), one `PurePath` flavor rule everywhere, `__setstate__` normalises old pickles (tested with bytes written by PyPI 0.3.1), corrected change list |
+| b. Correctness and ground truth | 1 | eb4b81c | PASS (1 low, 2 info) | own `PTH0` parser and up-level resolver over the whole install with no size cut: 680,038 complete records, lvpath's parse, rebuild and `from_flat_path` on both flavors agree on every one (1,061 refused non-ASCII fragments, all in the object cache); the documented counts re-derived exactly; the 11 fixture records match file and offset; 1,533 portable values found independently in 286 `.ini`/`.lvproj` files with no difference; NI page re-fetched, same SHA-256; `extcode.h` order confirmed. Low: the 50 MB cut of the scan was not stated; info: `extcode.h` wording, the empty absolute path on Windows. All addressed in the next commit |
 | a. API and docs | 3 (new reviewer) | 8a88c94 | PASS (3 low, info) | gates on Elena's PC; about 110 calls against 0.3.1 confirming every change-list claim, identical on 3.10 to 3.14; README, GUIDE and docstring doctests and 8 transcripts through `lvpath` and `python -m lvpath`; strict consumer clean; pickles both ways for protocols 0, 2 and 5; rounds 1 and 2 fixed. Lows (one change-list sentence missing `from_portable_path` on POSIX, the `None` annotation of `to_flat_path`, an ambiguous name count) fixed in the next commit |
 
 ## Independent reviewer (item 16)
