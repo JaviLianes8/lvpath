@@ -233,10 +233,10 @@ same list as CHANGELOG 1.0.0):
   with no backslash or colon inside a component on the way to Windows; anything else
   raises `PortablePathError` (`FlatPathError` in `to_flat_path`). 0.3.1 re-read a
   `PurePath` with the flavor of `platform` (or of the running system) in `to_lv_path`,
-  `to_flat_path`, `to_os_path` and `path_kind`, producing a different path for anchored
+  `to_flat_path`, `to_os_path`, `path_kind` and, on POSIX, `from_portable_path`, producing a different path for anchored
   ones, and `from_portable_path` raised `TypeError` for a `PurePath` on Windows. The
   annotations of `to_os_path`, `path_kind` and `from_portable_path` now include
-  `PurePath`.
+  `PurePath`, and that of `to_flat_path` includes `None`.
 - `platform` is checked before anything else in every function: an unknown name raises
   `ValueError` and a value that is not a `str`, `Platform` or `None` raises `TypeError`
   (0.3.1 raised `AttributeError`), even when the path is empty or the bytes are malformed.
