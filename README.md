@@ -1,5 +1,7 @@
 # lvpath
 
+[![Lianes8 Certified](https://lianes8studio.com/certified/lianes8-certified-badge.svg)](https://lianes8studio.com/certified)
+
 Convert LabVIEW path values to and from Python `pathlib` paths, in all three forms
 LabVIEW uses: the portable text it writes into configuration and project files
 (`/C/DIR1/DIR2`), the native text of `Path To String`, and the flattened `PTH0` bytes
