@@ -23,7 +23,7 @@ Progress:
 | 3 | Docstrings with runnable examples | PASS | every public name and `FlatPath` member has `>>>`; every module doctested; README and GUIDE `pycon` blocks and `console` transcripts run in `test_docs` |
 | 4 | Typed end to end | PASS | `mypy --strict src tests` clean; `py.typed` shipped; `get_type_hints` on every public callable |
 | 5 | Typed, documented, safe errors | PASS | GUIDE error table; messages quote at most 40 characters of a value; CLI lines at most 200 |
-| 6 | Contract asserts the full promise | PASS | 364 tests: a promise test per public name, LabVIEW and NI ground truth, fuzz, CLI in process and by subprocess on the wheel, and the contracts from the author round and the blind lens e round |
+| 6 | Contract asserts the full promise | PASS | 372 tests: a promise test per public name, LabVIEW and NI ground truth, fuzz, CLI in process and by subprocess on the wheel, and the contracts from the author round and the blind lens e round |
 | 7 | Real ground truth | PASS | 349,566 `PTH0` records LabVIEW 2026 stored in its install, 11 chosen ones in a fixture, full sweep opt-in; NI page fetched 2026-10-15; 0.3.1 fixture of values from LabVIEW 2026 files |
 | 8 | Real e2e incl. PyPI upgrade | PASS | wheel in a throwaway venv driven by subprocess (`conftest.py`, `test_cli_e2e*.py`); PyPI 0.3.1 upgraded in place by the author and by lens d, every change-list claim confirmed |
 | 9 | Seeded fuzz, no crash, hang or blow-up | PASS | `test_fuzz.py` (20,000 mutated byte strings, 100,000 random text calls, 5,000 round trips, six scaling checks); lens c rounds: 200,000 + 60,000 + 32,672 seeded cases, 1,500 subprocess CLI runs, every dimension linear; PASS at round 3 |
