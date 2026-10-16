@@ -32,10 +32,10 @@ Progress:
 | 12 | CHANGELOG dated 1.0.0 | PASS | `## [1.0.0] - 2026-10-15` |
 | 13 | pyproject | PASS | 1.0.0, Production/Stable, 3.10 to 3.14, MIT, Homepage/Source/Issues/Changelog, keywords, `dependencies = []` (`test_packaging`) |
 | 14 | sdist and wheel contents | PASS | wheel: package, `py.typed`, LICENSE, metadata; sdist: src, tests, fixtures, sources manifest only, docs |
-| 15 | Gates exit 0 alone | PASS | `ruff format --check .`, `ruff check .`, `mypy --strict src`, `pytest` (on Elena's PC at 46d9403: 357 passed, 4 skipped, wheel end-to-end included) |
-| 16 | Independent reviewer | pending | |
+| 15 | Gates exit 0 alone | PASS | `ruff format --check .`, `ruff check .`, `mypy --strict src`, `pytest`, each alone on a fresh clone (reviewer, Elena's PC: 368 passed, 4 skipped, wheel end-to-end included) |
+| 16 | Independent reviewer | pending review 2 | review 1 FAIL (6 surviving mutations, stale report lines), fixed in c3bade2 |
 | 17 | PR, trace guard | pending | |
-| 18 | Mutation round | PASS | author: 47 mutations, all killed (3 after new contracts); blind lens e: 40 mutations, 33 killed, 7 survivors closed by contracts and re-verified killed; tables below |
+| 18 | Mutation round | PASS | author: 47 mutations, all killed (3 after new contracts); blind lens e: 40, 7 survivors closed by contracts; reviewer: 40, 2 equivalent, 6 survivors closed by contracts; every closed survivor re-applied and killed |
 | 19 | Five QA lenses | PASS | a (round 3), b (round 1), c (round 3), d (round 1) PASS; e FAIL until its seven contracts were added, all its mutants then killed |
 
 ## Baseline on 0.3.1 (before any change)
@@ -179,6 +179,7 @@ three survivors and M47 was rewritten, and the rerun killed all four.
 
 | Review | Head | Verdict | Findings and outcome |
 | --- | --- | --- | --- |
+| 1 | 963f198 | FAIL | items 1 to 5, 7 to 15 and 19 PASS (gates on a fresh clone on Elena's PC: 368 passed, 4 skipped); house rules PASS; 40 mutations of its own on the branch's changed code: 32 killed, 2 equivalent (`len(drive) != 1` redundant with the letter set; a UNC drive check no input reaches on 3.10 to 3.14), 6 survivors (7-bit length byte, upper-case-only drives, a `str` subclass's `__str__` used for the original text, three message-only checks); report not current (test count, type 2 decision). Contracts added in `tests/test_contract_review.py` and report fixed in c3bade2; the six mutants re-applied on this PC are all killed by them |
 
 ## Decisions for the maintainer
 
