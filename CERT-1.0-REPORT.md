@@ -10,7 +10,7 @@ Progress:
 - [x] Contract, fuzz and author mutation round (items 6, 9, 18)
 - [x] Docs: README, GUIDE, CHANGELOG (items 11, 12)
 - [x] Packaging, e2e and upgrade from PyPI 0.3.1 (items 8, 10, 13, 14)
-- [ ] Independent reviewer and five QA lenses report PASS (items 16, 19): a, b, c PASS; d, e and the reviewer still to run
+- [ ] Independent reviewer and five QA lenses report PASS (items 16, 19): five lenses done; reviewer pending
 - [x] Gates (item 15)
 - [ ] PR and trace guard CLEAN (item 17); merge and publish left to the maintainer
 
@@ -23,20 +23,20 @@ Progress:
 | 3 | Docstrings with runnable examples | PASS | every public name and `FlatPath` member has `>>>`; every module doctested; README and GUIDE `pycon` blocks and `console` transcripts run in `test_docs` |
 | 4 | Typed end to end | PASS | `mypy --strict src tests` clean; `py.typed` shipped; `get_type_hints` on every public callable |
 | 5 | Typed, documented, safe errors | PASS | GUIDE error table; messages quote at most 40 characters of a value; CLI lines at most 200 |
-| 6 | Contract asserts the full promise | pending lens e | 331 tests |
+| 6 | Contract asserts the full promise | PASS | 364 tests: a promise test per public name, LabVIEW and NI ground truth, fuzz, CLI in process and by subprocess on the wheel, and the contracts from the author round and the blind lens e round |
 | 7 | Real ground truth | PASS | 349,566 `PTH0` records LabVIEW 2026 stored in its install, 11 chosen ones in a fixture, full sweep opt-in; NI page fetched 2026-10-15; 0.3.1 fixture of values from LabVIEW 2026 files |
-| 8 | Real e2e incl. PyPI upgrade | PASS | wheel in a throwaway venv driven by subprocess (`conftest.py`); PyPI 0.3.1 upgraded in place, every difference listed below |
+| 8 | Real e2e incl. PyPI upgrade | PASS | wheel in a throwaway venv driven by subprocess (`conftest.py`, `test_cli_e2e*.py`); PyPI 0.3.1 upgraded in place by the author and by lens d, every change-list claim confirmed |
 | 9 | Seeded fuzz, no crash, hang or blow-up | PASS | `test_fuzz.py` (20,000 mutated byte strings, 100,000 random text calls, 5,000 round trips, six scaling checks); lens c rounds: 200,000 + 60,000 + 32,672 seeded cases, 1,500 subprocess CLI runs, every dimension linear; PASS at round 3 |
-| 10 | Every interpreter | PASS | sdist suite with `src` removed against the wheel on 3.10.19, 3.11.5, 3.12.12, 3.13.2, 3.14.2, 3.14.2t |
+| 10 | Every interpreter | PASS | sdist suite with `src` removed against the wheel: author on 3.10.19, 3.11.5, 3.12.12, 3.13.2, 3.14.2, 3.14.2t; lens d on 3.10.22, 3.11.13, 3.12.15, 3.13.16, 3.14.2, 3.14.8t |
 | 11 | README | PASS | `twine check --strict` PASSED; absolute links tested; problem, why, install, quick start, GUIDE and CHANGELOG links |
 | 12 | CHANGELOG dated 1.0.0 | PASS | `## [1.0.0] - 2026-10-15` |
 | 13 | pyproject | PASS | 1.0.0, Production/Stable, 3.10 to 3.14, MIT, Homepage/Source/Issues/Changelog, keywords, `dependencies = []` (`test_packaging`) |
 | 14 | sdist and wheel contents | PASS | wheel: package, `py.typed`, LICENSE, metadata; sdist: src, tests, fixtures, sources manifest only, docs |
-| 15 | Gates exit 0 alone | PASS | `ruff format --check .`, `ruff check .`, `mypy --strict src`, `pytest` (331 passed, 1 skipped) |
+| 15 | Gates exit 0 alone | PASS | `ruff format --check .`, `ruff check .`, `mypy --strict src`, `pytest` (on Elena's PC at 46d9403: 357 passed, 4 skipped, wheel end-to-end included) |
 | 16 | Independent reviewer | pending | |
 | 17 | PR, trace guard | pending | |
-| 18 | Mutation round | PASS (author) | 47 mutations, all killed (3 after new contracts); table below |
-| 19 | Five QA lenses | pending | |
+| 18 | Mutation round | PASS | author: 47 mutations, all killed (3 after new contracts); blind lens e: 40 mutations, 33 killed, 7 survivors closed by contracts and re-verified killed; tables below |
+| 19 | Five QA lenses | PASS | a (round 3), b (round 1), c (round 3), d (round 1) PASS; e FAIL until its seven contracts were added, all its mutants then killed |
 
 ## Baseline on 0.3.1 (before any change)
 
@@ -173,6 +173,7 @@ three survivors and M47 was rewritten, and the rerun killed all four.
 | c. Adversarial and robustness | 2 (new reviewer) | 7f2d93d | FAIL (1 medium) | 111 checks reproducing round 1 (97 fixed), 60,000 seeded in-process cases and 300 subprocess CLI runs on the wheel, 20,000 in-process CLI runs with real text streams, scaling linear to 320k. Medium: surrogates outside U+DC80 to U+DCFF (reachable from Windows argv) still crashed the CLI on output. Fixed in the next commit: refused in one line with status 1, contracts for U+D800, U+DBFF, U+DC00, U+DFFF |
 | c. Adversarial and robustness | 3 (new reviewer) | 41781b6 | PASS (info) | every lone surrogate U+D800 to U+DFFF through every command on both platforms and as option values: 32,672 in-process runs with real text streams and 828 subprocess runs on the wheel, no traceback, single bounded stderr line, documented statuses. Info: on Windows a lone surrogate in U+DC80 to U+DCFF is written as its raw byte (the documented surrogateescape behaviour) |
 | d. Packaging and real e2e | 1 | 46d9403 | PASS (2 low, 2 info) | on Elena's PC: build, `twine check --strict`, `check-wheel-contents`, archive contents as documented; the sdist suite with `src` removed against the wheel on 3.10.22 (356 passed, 5 skipped), 3.11.13, 3.12.15, 3.13.16, 3.14.2 and 3.14.8 free-threaded (357 passed, 4 skipped each; 3.11.17 blocked by that PC's launcher policy); outside consumer, console script and `python -m lvpath` by subprocess; PyPI 0.3.1 upgraded in place, 27 change-list claims confirmed, old pickles load; `check.ps1` and a no-upload copy of `release.ps1` behave as commented. Lows (scripts assumed the repo root as current folder, a dead `.gitignore` exclude) fixed in the next commit; info: the README's GUIDE link resolves only after the merge, a PyPI token exists on the build PC |
+| e. Contract strength | 1 (blind) | 6c5ab4f | FAIL until its contracts were added | 40 mutations designed from the source alone, full suite with `-x` on this PC: 33 killed, 7 survivors, none equivalent (0xFFFF path type refused, a 40-character value marked as cut, default platform inverted, blank text taken as not-a-path, the mixed-slash UNC prefix refused, the `\.\` device prefix dropped, the stderr cap loosened). Its seven proposed contracts added in `tests/test_contract_strength.py`; the seven mutants re-applied on the laptop are all killed by them |
 
 ## Independent reviewer (item 16)
 
