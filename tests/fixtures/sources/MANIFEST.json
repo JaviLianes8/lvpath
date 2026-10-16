@@ -1,0 +1,13 @@
+{
+  "note": "public reference fetched for the source test",
+  "files": [
+    {
+      "file": "ni-flattened-data.json",
+      "url": "https://docs-be.ni.com/api/bundle/labview/page/flattened-data.html",
+      "fetched": "2026-10-15",
+      "size": 22250,
+      "sha256": "70203e5af5f0b8c55347fff81ced9f70bba3fb2537473ed1cfc103d79ed4524c",
+      "licence": "NI documentation, copyright NI; local copy only"
+    }
+  ]
+}

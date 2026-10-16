@@ -7,25 +7,25 @@ models the binary ``Flatten To String`` ``PTH0`` form. The portable surface
 (:func:`from_portable_path`, :func:`to_portable_path`) models the
 platform-independent form LabVIEW writes into configuration and project files,
 such as ``/C/DIR1/DIR2`` for ``C:\\DIR1\\DIR2``.
+
+>>> import lvpath
+>>> lvpath.from_portable_path("/C/DIR1/DIR2", platform="windows")
+PureWindowsPath('C:/DIR1/DIR2')
+>>> lvpath.to_flat_path("C:/file", platform="windows").startswith(lvpath.SIGNATURE)
+True
 """
 
 from __future__ import annotations
 
 from ._convert import path_kind, to_lv_path, to_os_path
+from ._fields import FlatPathError
 from ._flatbridge import from_flat_path, to_flat_path
-from ._flatten import (
-    SIGNATURE,
-    FlatPath,
-    FlatPathError,
-    FlatPathType,
-    build_flat_path,
-    parse_flat_path,
-)
+from ._flatten import SIGNATURE, FlatPath, FlatPathType, build_flat_path, parse_flat_path
 from ._kinds import NotAPathError, PathKind
 from ._platform import Platform
 from ._portable import PortablePathError, from_portable_path, to_portable_path
 
-__version__ = "0.3.1"
+__version__ = "1.0.0"
 
 __all__ = [
     "SIGNATURE",

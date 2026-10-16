@@ -22,8 +22,10 @@ from __future__ import annotations
 import re
 from pathlib import PurePath, PurePosixPath, PureWindowsPath
 
+from ._coerce import as_pure
 from ._kinds import NotAPathError
-from ._platform import Platform, flavor, resolve
+from ._platform import Platform, resolve
+from ._text import quote, type_name
 
 _PORTABLE_DRIVE = re.compile(r"^/([A-Za-z])(?:/(.*))?$", re.DOTALL)
 _MALFORMED_DRIVE = re.compile(r"^/[A-Za-z][:\\]")
@@ -35,10 +37,19 @@ class PortablePathError(ValueError):
 
     The message names the value and why it cannot be converted, for example a
     POSIX absolute path read as a Windows path or a drive-relative ``C:file``.
+
+    >>> from_portable_path("/home/lvuser", platform="windows")
+    Traceback (most recent call last):
+    ...
+    lvpath.PortablePathError: '/home/lvuser' is a POSIX absolute path with no Windows equivalent
+    >>> issubclass(PortablePathError, ValueError)
+    True
     """
 
+    __module__ = "lvpath"
 
-def from_portable_path(text: str, *, platform: Platform | str | None = None) -> PurePath:
+
+def from_portable_path(text: str | PurePath, *, platform: Platform | str | None = None) -> PurePath:
     """Parse LabVIEW's portable path string into a ``PurePath`` for ``platform``.
 
     On Windows ``/C/DIR1/DIR2`` becomes ``PureWindowsPath('C:/DIR1/DIR2')``,
@@ -46,23 +57,48 @@ def from_portable_path(text: str, *, platform: Platform | str | None = None) -> 
     A value already written in native Windows form (``C:\\DIR1``) is accepted
     as is. On POSIX the portable form is already native and is parsed directly.
 
+    A ``PurePath`` is taken as already native: it keeps its own flavor unless
+    ``platform`` names the other one, which only a relative path may cross.
+
     Raises :class:`NotAPathError` for the empty ``<Not A Path>`` value and
     :class:`PortablePathError` for a value with no Windows equivalent.
+
+    >>> from_portable_path("/C/Program Files (x86)/Arduino", platform="windows")
+    PureWindowsPath('C:/Program Files (x86)/Arduino')
+    >>> from_portable_path("//server/share/dir", platform="windows")
+    PureWindowsPath('//server/share/dir')
+    >>> from_portable_path("/home/lvuser/natinst/bin", platform="posix")
+    PurePosixPath('/home/lvuser/natinst/bin')
     """
+    target = resolve(platform)
+    if isinstance(text, PurePath):
+        return _native(text, platform)
+    if not isinstance(text, str):
+        raise TypeError(f"a portable path must be a str or a PurePath, not {type_name(text)}")
+    text = str.__str__(text)
     if text == "":
         raise NotAPathError("LabVIEW not-a-path has no OS path")
-    if resolve(platform) is Platform.POSIX:
+    if target is Platform.POSIX:
         return PurePosixPath(text)
     match = _PORTABLE_DRIVE.fullmatch(text)
     if match:
         drive, rest = match.groups()
         return PureWindowsPath(f"{drive}:\\{rest or ''}")
     if _MALFORMED_DRIVE.match(text):
-        raise PortablePathError(f"{text!r} has a malformed drive component, expected /C/...")
+        raise PortablePathError(f"{quote(text)} has a malformed drive component, expected /C/...")
     if text.startswith("/") and not text.startswith(("//", "/\\")):
-        raise PortablePathError(f"{text!r} is a POSIX absolute path with no Windows equivalent")
+        raise PortablePathError(
+            f"{quote(text)} is a POSIX absolute path with no Windows equivalent"
+        )
     pure = PureWindowsPath(text)
     _check_windows(pure, text)
+    return pure
+
+
+def _native(path: PurePath, platform: Platform | str | None) -> PurePath:
+    pure = as_pure(path, platform, PortablePathError)
+    if isinstance(pure, PureWindowsPath):
+        _check_windows(pure, str(pure))
     return pure
 
 
@@ -81,33 +117,22 @@ def to_portable_path(
     names the other flavor, only a relative path may be carried across.
 
     Raises :class:`PortablePathError` for a Windows path with no portable form.
+
+    >>> to_portable_path("C:/DIR1/DIR2", platform="windows")
+    '/C/DIR1/DIR2'
+    >>> to_portable_path("//server/share/dir", platform="windows")
+    '//server/share/dir'
+    >>> to_portable_path(None)
+    ''
     """
-    if os_path is None or os_path == "":
+    resolve(platform)
+    if os_path is None or (isinstance(os_path, str) and str.__len__(os_path) == 0):
         return ""
-    original = os_path if isinstance(os_path, str) else str(os_path)
-    pure = _as_pure(os_path, platform)
+    original = str.__str__(os_path) if isinstance(os_path, str) else str(os_path)
+    pure = as_pure(os_path, platform, PortablePathError)
     if isinstance(pure, PureWindowsPath):
         return _windows_to_portable(pure, original)
     return str(pure)
-
-
-def _as_pure(os_path: PurePath | str, platform: Platform | str | None) -> PurePath:
-    if isinstance(os_path, str):
-        return flavor(resolve(platform))(os_path)
-    if platform is None:
-        return os_path
-    target = flavor(resolve(platform))
-    if isinstance(os_path, target):
-        return os_path
-    if os_path.anchor:
-        raise PortablePathError(
-            f"cannot carry the anchored path {str(os_path)!r} to the {target.__name__} flavor"
-        )
-    if target is PureWindowsPath and any("\\" in part for part in os_path.parts):
-        raise PortablePathError(
-            f"a component of {str(os_path)!r} contains a backslash, a Windows separator"
-        )
-    return target(*os_path.parts)
 
 
 def _windows_to_portable(pure: PureWindowsPath, original: str) -> str:
@@ -127,13 +152,13 @@ def _check_windows(pure: PureWindowsPath, original: str) -> None:
     # incomplete UNC prefix differently across Python versions.
     text = original.replace("/", "\\")
     if text.startswith(_DEVICE_PREFIXES):
-        raise PortablePathError(f"{original!r} is a device path with no portable form")
+        raise PortablePathError(f"{quote(original)} is a device path with no portable form")
     if text.startswith("\\\\"):
         server, _, rest = text[2:].partition("\\")
         if not server or not rest.partition("\\")[0] or not pure.drive.startswith("\\\\"):
-            raise PortablePathError(f"{original!r} is not a //server/share UNC path")
+            raise PortablePathError(f"{quote(original)} is not a //server/share UNC path")
         return
     if pure.drive and not pure.root:
-        raise PortablePathError(f"{original!r} is drive-relative and has no portable form")
+        raise PortablePathError(f"{quote(original)} is drive-relative and has no portable form")
     if pure.root and not pure.drive:
-        raise PortablePathError(f"{original!r} is rooted without a drive or UNC share")
+        raise PortablePathError(f"{quote(original)} is rooted without a drive or UNC share")

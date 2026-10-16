@@ -72,9 +72,7 @@ def test_decode_reports_bad_hex(capsys: pytest.CaptureFixture[str]) -> None:
 
 
 def test_a_missing_command_is_a_usage_error(capsys: pytest.CaptureFixture[str]) -> None:
-    with pytest.raises(SystemExit) as raised:
-        main([])
-    assert raised.value.code == 2
+    assert main([]) == 2
     assert "usage: lvpath" in capsys.readouterr().err
 
 
@@ -90,3 +88,15 @@ def test_every_help_example_runs_and_prints_what_it_states(
         following = lines[index + 1] if index + 1 < len(lines) else ""
         if following.startswith("# prints "):
             assert out == following.removeprefix("# prints ") + "\n", lines[index]
+
+
+def test_hex_may_hold_spaces_anywhere(capsys: pytest.CaptureFixture[str]) -> None:
+    spaced = "505 44830 0000000b00 000002014304 66696c65"
+    assert _out(capsys, "decode", "--platform", "windows", spaced) == (0, "C:\\file\n", "")
+
+
+def test_every_error_line_is_at_most_200_characters(capsys: pytest.CaptureFixture[str]) -> None:
+    for args in (["nope" * 5000], ["decode", "--platform", "mac" * 5000, "00"]):
+        assert main(args) == 2
+        err = capsys.readouterr().err
+        assert err.splitlines() and all(len(line) <= 200 for line in err.splitlines())

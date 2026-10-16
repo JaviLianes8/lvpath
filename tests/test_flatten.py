@@ -121,5 +121,5 @@ def test_unc_path_is_refused_with_an_honest_error() -> None:
 
 def test_uninterpretable_type_code_is_refused_by_the_bridge() -> None:
     data = FlatPath(path_type=9, components=("x",)).to_bytes()
-    with pytest.raises(FlatPathError, match="no documented PurePath meaning"):
+    with pytest.raises(FlatPathError, match="no PurePath meaning"):
         from_flat_path(data, platform="windows")

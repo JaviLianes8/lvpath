@@ -1,50 +1,38 @@
-"""Real end-to-end tests: pip-install the package and drive the real console script.
+"""Real end-to-end tests: the built wheel in a throwaway venv, driven as a subprocess.
 
-These build a throwaway virtual environment, install the project into it in
-editable mode, and run the installed ``lvpath`` executable as a subprocess. They
-assert the real process stdout and exit status, not an in-process import, and
-prove the NI golden vector round-trips byte for byte through the shipped CLI.
+The ``installed`` fixture (``conftest.py``) builds the wheel, installs it into a fresh
+virtual environment and returns its console script. These tests assert the real process
+output and exit status and prove the NI golden vector round-trips through the shipped CLI.
 """
 
 from __future__ import annotations
 
 import shlex
 import subprocess
-import sys
-import venv
 from pathlib import Path
 
 import pytest
+from conftest import ENV
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+import lvpath
+
 GOLDEN_HEX = "505448300000000b0000000201430466696c65"
 
 
 @pytest.fixture(scope="module")
-def lvpath_exe(tmp_path_factory: pytest.TempPathFactory) -> Path:
-    env_dir = tmp_path_factory.mktemp("venv")
-    venv.create(env_dir, with_pip=True)
-    scripts = env_dir / ("Scripts" if sys.platform == "win32" else "bin")
-    python = scripts / ("python.exe" if sys.platform == "win32" else "python")
-    subprocess.run(
-        [str(python), "-m", "pip", "install", "--quiet", "--editable", str(PROJECT_ROOT)],
-        check=True,
-        capture_output=True,
-        timeout=600,
-    )
-    exe = scripts / ("lvpath.exe" if sys.platform == "win32" else "lvpath")
-    assert exe.is_file(), f"console script was not installed at {exe}"
-    return exe
+def lvpath_exe(installed: tuple[Path, Path]) -> Path:
+    return installed[1]
 
 
 def _run(exe: Path, *args: str) -> subprocess.CompletedProcess[str]:
-    return subprocess.run([str(exe), *args], capture_output=True, encoding="utf-8", timeout=60)
+    command = [str(exe), *args]
+    return subprocess.run(command, capture_output=True, encoding="utf-8", timeout=60, env=ENV)
 
 
 def test_installed_script_reports_its_version(lvpath_exe: Path) -> None:
     result = _run(lvpath_exe, "--version")
     assert result.returncode == 0
-    assert result.stdout.strip() == "lvpath 0.3.1"
+    assert result.stdout.strip() == f"lvpath {lvpath.__version__}"
 
 
 def test_installed_script_decodes_the_golden_vector(lvpath_exe: Path) -> None:
