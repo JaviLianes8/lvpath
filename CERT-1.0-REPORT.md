@@ -184,8 +184,10 @@ three survivors and M47 was rewritten, and the rerun killed all four.
 
 - LabVIEW could not be driven on 2026-10-15 (NI sign-in server error), so no value was set
   and flattened through a running LabVIEW; the flattened form is checked against what
-  LabVIEW 2026 itself saved into its install and against NI's example. Type `2` is kept as
-  read but not interpreted, since its meaning is not established.
+  LabVIEW 2026 itself saved into its install, against NI's example and against the type
+  codes of LabVIEW's `cintools/extcode.h`. Type `2` is decoded as not-a-path
+  (`NotAPathError`); type `3` (UNC) is named but refused, since no UNC record exists to
+  confirm its component layout.
 - Paths are ASCII only in the flattened form, as before; no record in the install holds a
   non-ASCII byte, so a code page was not guessed.
 - The fixture keeps eleven short records copied byte for byte from NI files with their file
