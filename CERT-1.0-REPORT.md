@@ -10,9 +10,9 @@ Progress:
 - [x] Contract, fuzz and author mutation round (items 6, 9, 18)
 - [x] Docs: README, GUIDE, CHANGELOG (items 11, 12)
 - [x] Packaging, e2e and upgrade from PyPI 0.3.1 (items 8, 10, 13, 14)
-- [ ] Independent reviewer and five QA lenses report PASS (items 16, 19): five lenses done; reviewer pending
+- [x] Independent reviewer and five QA lenses report PASS (items 16, 19): lenses a to e done, review 2 PASS
 - [x] Gates (item 15)
-- [ ] PR and trace guard CLEAN (item 17); merge and publish left to the maintainer
+- [x] PR #6 and trace guard CLEAN (item 17); merge and publish left to the maintainer
 
 ## Scorecard
 
@@ -23,7 +23,7 @@ Progress:
 | 3 | Docstrings with runnable examples | PASS | every public name and `FlatPath` member has `>>>`; every module doctested; README and GUIDE `pycon` blocks and `console` transcripts run in `test_docs` |
 | 4 | Typed end to end | PASS | `mypy --strict src tests` clean; `py.typed` shipped; `get_type_hints` on every public callable |
 | 5 | Typed, documented, safe errors | PASS | GUIDE error table; messages quote at most 40 characters of a value; CLI lines at most 200 |
-| 6 | Contract asserts the full promise | PASS | 372 tests: a promise test per public name, LabVIEW and NI ground truth, fuzz, CLI in process and by subprocess on the wheel, and the contracts from the author round and the blind lens e round |
+| 6 | Contract asserts the full promise | PASS | 381 tests: a promise test per public name, LabVIEW and NI ground truth, fuzz, CLI in process and by subprocess on the wheel, and the contracts from the author round, the blind lens e round and the reviewer round |
 | 7 | Real ground truth | PASS | 349,566 `PTH0` records LabVIEW 2026 stored in its install, 11 chosen ones in a fixture, full sweep opt-in; NI page fetched 2026-10-15; 0.3.1 fixture of values from LabVIEW 2026 files |
 | 8 | Real e2e incl. PyPI upgrade | PASS | wheel in a throwaway venv driven by subprocess (`conftest.py`, `test_cli_e2e*.py`); PyPI 0.3.1 upgraded in place by the author and by lens d, every change-list claim confirmed |
 | 9 | Seeded fuzz, no crash, hang or blow-up | PASS | `test_fuzz.py` (20,000 mutated byte strings, 100,000 random text calls, 5,000 round trips, six scaling checks); lens c rounds: 200,000 + 60,000 + 32,672 seeded cases, 1,500 subprocess CLI runs, every dimension linear; PASS at round 3 |
@@ -32,9 +32,9 @@ Progress:
 | 12 | CHANGELOG dated 1.0.0 | PASS | `## [1.0.0] - 2026-10-15` |
 | 13 | pyproject | PASS | 1.0.0, Production/Stable, 3.10 to 3.14, MIT, Homepage/Source/Issues/Changelog, keywords, `dependencies = []` (`test_packaging`) |
 | 14 | sdist and wheel contents | PASS | wheel: package, `py.typed`, LICENSE, metadata; sdist: src, tests, fixtures, sources manifest only, docs |
-| 15 | Gates exit 0 alone | PASS | `ruff format --check .`, `ruff check .`, `mypy --strict src`, `pytest`, each alone on a fresh clone (reviewer, Elena's PC: 368 passed, 4 skipped, wheel end-to-end included) |
-| 16 | Independent reviewer | pending review 2 | review 1 FAIL (6 surviving mutations, stale report lines), fixed in c3bade2 |
-| 17 | PR, trace guard | pending | |
+| 15 | Gates exit 0 alone | PASS | `ruff format --check .`, `ruff check .`, `mypy --strict src`, `pytest`, each alone on a fresh clone (review 2, laptop, Python 3.14: 377 passed, 4 skipped, wheel end-to-end included) |
+| 16 | Independent reviewer | PASS | review 1 FAIL (6 surviving mutations, stale report lines), fixed in c3bade2; review 2 PASS at 582e8a2 |
+| 17 | PR, trace guard | ready | PR #6 from `release/1.0.0`, trace guard CLEAN; merge and PyPI publish left to the maintainer |
 | 18 | Mutation round | PASS | author: 47 mutations, all killed (3 after new contracts); blind lens e: 40, 7 survivors closed by contracts; reviewer: 40, 2 equivalent, 6 survivors closed by contracts; every closed survivor re-applied and killed |
 | 19 | Five QA lenses | PASS | a (round 3), b (round 1), c (round 3), d (round 1) PASS; e FAIL until its seven contracts were added, all its mutants then killed |
 
@@ -180,6 +180,7 @@ three survivors and M47 was rewritten, and the rerun killed all four.
 | Review | Head | Verdict | Findings and outcome |
 | --- | --- | --- | --- |
 | 1 | 963f198 | FAIL | items 1 to 5, 7 to 15 and 19 PASS (gates on a fresh clone on Elena's PC: 368 passed, 4 skipped); house rules PASS; 40 mutations of its own on the branch's changed code: 32 killed, 2 equivalent (`len(drive) != 1` redundant with the letter set; a UNC drive check no input reaches on 3.10 to 3.14), 6 survivors (7-bit length byte, upper-case-only drives, a `str` subclass's `__str__` used for the original text, three message-only checks); report not current (test count, type 2 decision). Contracts added in `tests/test_contract_review.py` and report fixed in c3bade2; the six mutants re-applied on this PC are all killed by them |
+| 2 | 582e8a2 | PASS (1 low, 1 info) | the four gates each alone on a fresh clone on the laptop (377 passed, 4 skipped); `git diff 963f198..HEAD -- src` empty; review 1's six mutants re-applied, each killed by `tests/test_contract_review.py`; items 1 to 16, 18 and 19 PASS, 17 ready; house rules on the new commits PASS. Low: stale test count in item 6, fixed in the next commit |
 
 ## Decisions for the maintainer
 
